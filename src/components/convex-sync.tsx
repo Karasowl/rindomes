@@ -1,0 +1,173 @@
+"use client";
+
+import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import { stateFromConvexSnapshot, stateSnapshotForConvex } from "@/lib/convex-adapter";
+import { createEmptyState } from "@/lib/onboarding";
+import type { AppState } from "@/lib/types";
+
+const HOUSEHOLD_KEY = "rindomes.convex.householdId";
+
+/**
+ * Makes Convex the live source of truth, without rewriting every view:
+ * - Reads the household snapshot reactively (useQuery) and hydrates the app state.
+ * - Writes every local change back through a debounced saveSnapshot mutation.
+ * - Suppresses the echo of our own writes so the reactive update doesn't loop.
+ *
+ * Rendered only when Convex is configured (so the hooks always run inside the
+ * ConvexProvider). The local state + localStorage path keeps the UI instant and
+ * works offline; this component reconciles it with the backend.
+ */
+export function ConvexSync({
+  state,
+  setState,
+  ready,
+  canEdit,
+  onNeedsOnboarding,
+  onHouseholdId,
+}: {
+  state: AppState;
+  setState: Dispatch<SetStateAction<AppState>>;
+  ready: boolean;
+  canEdit: boolean;
+  onNeedsOnboarding?: () => void;
+  // Lifts the active householdId up to AppShell. Called whenever it changes:
+  // initial load (from localStorage), login switch (auth-scoped household), and
+  // after a save that provisions a brand-new household. This is the seam the
+  // gated views (paywall / receipt capture / entitlement) need, since every
+  // gated Convex action requires the householdId that otherwise lives only here.
+  // A post-email-verify session lands on the same `isAuthenticated` -> myHousehold
+  // hydration path below, so onHouseholdId fires for verified sign-ins too.
+  onHouseholdId?: (id: string | null) => void;
+}) {
+  const saveSnapshot = useMutation(api.finance.saveSnapshot);
+  const [householdId, setHouseholdId] = useState<string | null>(() =>
+    typeof window !== "undefined" ? window.localStorage.getItem(HOUSEHOLD_KEY) : null,
+  );
+  const snapshot = useQuery(
+    api.finance.getHouseholdSnapshot,
+    householdId ? { householdId: householdId as Id<"households"> } : "skip",
+  );
+
+  const hydratedRef = useRef(false);
+  const skipNextSaveRef = useRef(false);
+  const suppressEchoUntilRef = useRef(0);
+  const saveTimerRef = useRef<number | null>(null);
+  // The household version this client last hydrated. Sent as baseVersion on every save so the
+  // backend can reject (instead of silently apply) a write made against stale data.
+  const versionRef = useRef<number | undefined>(undefined);
+
+  // Only provision a brand-new household (no id yet) once the user has completed
+  // onboarding — never from the untouched demo seed of someone just exploring.
+  const onboardingCompleted =
+    typeof window !== "undefined" && window.localStorage.getItem("rindomes.onboarded") === "1";
+
+  const { isAuthenticated } = useConvexAuth();
+  const myHousehold = useQuery(api.finance.getMyHousehold, isAuthenticated ? {} : "skip");
+  const claimInvites = useMutation(api.finance.claimInvites);
+
+  // Surface the active householdId to the parent (AppShell). This single effect
+  // covers every way householdId can change — the initial localStorage value, the
+  // login switch to the auth-scoped household (incl. a post-email-verify session,
+  // which hydrates through the same myHousehold path), and the post-save provision
+  // of a brand-new household — because all of them flow through this state setter.
+  useEffect(() => {
+    onHouseholdId?.(householdId);
+  }, [householdId, onHouseholdId]);
+
+  // On login, link any pending email invites to this account.
+  useEffect(() => {
+    if (isAuthenticated) void claimInvites({}).catch(() => {});
+  }, [isAuthenticated, claimInvites]);
+
+  // When signed in, the account's household is the source of truth: switch to it
+  // (this is how an invited member ends up on the shared hogar across devices).
+  useEffect(() => {
+    if (isAuthenticated && myHousehold && myHousehold !== householdId) {
+      hydratedRef.current = false;
+      // Syncing the active household from the auth-scoped query is a legitimate
+      // external-state sync, not derived-render state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHouseholdId(myHousehold);
+      window.localStorage.setItem(HOUSEHOLD_KEY, myHousehold);
+    }
+  }, [isAuthenticated, myHousehold, householdId]);
+
+  // Account-first onboarding: once we know the signed-in account has no hogar yet (and
+  // this browser has no local one either), guide a brand-new user through setup. Deferring
+  // this to here — instead of a mount-time localStorage guess — means a returning user on a
+  // new device hydrates their existing hogar instead of being sent through onboarding again.
+  const onboardingNotifiedRef = useRef(false);
+  useEffect(() => {
+    if (!ready || onboardingNotifiedRef.current || !onNeedsOnboarding) return;
+    if (!isAuthenticated || myHousehold === undefined) return; // still resolving
+    // Only prompt a genuinely brand-new account: no hogar AND it has never dismissed
+    // onboarding. Once they complete or skip it (flag set), never auto-reopen it —
+    // that re-prompt-on-reload was perceived as a loop.
+    const dismissed = typeof window !== "undefined" && Boolean(window.localStorage.getItem("rindomes.onboarded"));
+    if (myHousehold === null && !householdId && !dismissed) {
+      onboardingNotifiedRef.current = true;
+      onNeedsOnboarding();
+    }
+  }, [ready, isAuthenticated, myHousehold, householdId, onNeedsOnboarding]);
+
+  // Reactive read: hydrate on initial load and on idle remote updates.
+  useEffect(() => {
+    if (!ready || snapshot === undefined) return; // still loading
+    if (snapshot === null) {
+      hydratedRef.current = true; // household not found; local copy is authoritative
+      return;
+    }
+    // Ignore the reactive update caused by our own recent save.
+    if (hydratedRef.current && Date.now() < suppressEchoUntilRef.current) return;
+    hydratedRef.current = true;
+    skipNextSaveRef.current = true; // don't write a freshly-read snapshot back
+    versionRef.current = (snapshot.household as { version?: number } | null)?.version ?? 0;
+    setState(stateFromConvexSnapshot(snapshot, createEmptyState()));
+  }, [snapshot, ready, setState]);
+
+  // Write-through: debounced save of local changes to Convex.
+  useEffect(() => {
+    if (!ready || !canEdit) return;
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false;
+      return;
+    }
+    // For an existing household, never save before the initial hydrate (would clobber
+    // real data with stale local state). For a new household, only provision after onboarding.
+    const canWrite = householdId ? hydratedRef.current : (onboardingCompleted || isAuthenticated);
+    if (!canWrite) return;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const baseVersion = householdId ? versionRef.current : undefined;
+          const payload = stateSnapshotForConvex(state, householdId ?? undefined, baseVersion);
+          const result = await saveSnapshot(payload as Parameters<typeof saveSnapshot>[0]);
+          if (result?.conflict) {
+            // Another device advanced the hogar past our version. Don't overwrite it: drop
+            // our stale write and let the reactive snapshot re-hydrate the latest cloud state.
+            hydratedRef.current = false;
+            suppressEchoUntilRef.current = 0;
+            return;
+          }
+          suppressEchoUntilRef.current = Date.now() + 2500;
+          if (typeof result?.version === "number") versionRef.current = result.version;
+          if (result?.householdId && result.householdId !== householdId) {
+            setHouseholdId(result.householdId);
+            window.localStorage.setItem(HOUSEHOLD_KEY, result.householdId);
+          }
+        } catch {
+          // Keep the local copy; the next change retries.
+        }
+      })();
+    }, 1200);
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [state, ready, canEdit, householdId, saveSnapshot, onboardingCompleted, isAuthenticated]);
+
+  return null;
+}
