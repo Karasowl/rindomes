@@ -53,6 +53,7 @@ import { mergeMonthlyPlans, monthlyPlanId, monthlyPlansFromCategories, prepareMo
 import { isConvexConfigured } from "@/lib/convex-client";
 import { LanguageToggle, useT } from "@/lib/i18n";
 import { quoteExchangeRate, supportedCurrencies } from "@/lib/currency";
+import { rebaseCurrency } from "@/lib/rebase-currency";
 import { parseRindoMesWorkbook, type ImportedWorkbook } from "@/lib/excel-import";
 import { annualRows, categoryActualCents, categoryById, categoryUsage, formatMoney, groups, plannedCentsFor, recentTransactions, summarize, toCents, transactionsForMonth } from "@/lib/finance";
 import { suggestFromNaturalText, type NaturalCaptureSuggestion } from "@/lib/natural-capture";
@@ -6640,6 +6641,33 @@ function SettingsView({
   const [editingAlias, setEditingAlias] = useState<number | "new" | null>(null);
   // Destructive confirm modal for "Borrar datos" (consolidates clear AI history + reset local).
   const [confirmClear, setConfirmClear] = useState(false);
+  // Base-currency change: confirm + convert, never silently re-label. Holds the pending target
+  // and its quoted rate while the confirm Modal is open; `currencyBusy` covers the rate fetch.
+  const [currencyChange, setCurrencyChange] = useState<{
+    to: CurrencyCode;
+    rate: number;
+    date: string;
+    source: "api" | "manual" | "same_currency";
+  } | null>(null);
+  const [currencyBusy, setCurrencyBusy] = useState(false);
+
+  async function requestCurrencyChange(to: CurrencyCode) {
+    if (to === state.currency) return;
+    setCurrencyBusy(true);
+    try {
+      const quote = await quoteExchangeRate(state.currency, to);
+      setCurrencyChange({ to, rate: quote.rate, date: quote.date, source: quote.source });
+    } finally {
+      setCurrencyBusy(false);
+    }
+  }
+
+  function applyCurrencyChange() {
+    if (!currencyChange) return;
+    const { to, rate, date } = currencyChange;
+    setState((current) => rebaseCurrency(current, to, rate, date));
+    setCurrencyChange(null);
+  }
 
   function openNewCategory() {
     setCategoryForm({ group: "discretionary", name: "", subcategories: "", planned: "" });
@@ -6856,7 +6884,8 @@ function SettingsView({
         <h3 className="serif text-xl font-bold">{t("Moneda base", "Base currency")}</h3>
         <p className="mt-2 text-sm text-slate-600">{t("La moneda de tu hogar para totales y reportes. Cada cuenta conserva su propia moneda.", "Your household's home currency for totals and reports. Each account keeps its own currency.")}</p>
         <div className="mt-5">
-          <Select label={t("Moneda", "Currency")} value={state.currency} options={supportedCurrencies} render={currencyLabel} onChange={(value) => setState((current) => ({ ...current, currency: value as AppState["currency"] }))} />
+          <Select label={t("Moneda", "Currency")} value={state.currency} options={supportedCurrencies} render={currencyLabel} onChange={(value) => requestCurrencyChange(value as CurrencyCode)} />
+          {currencyBusy && <p className="mt-2 text-xs text-slate-500">{t("Buscando la tasa de cambio…", "Fetching the exchange rate…")}</p>}
         </div>
       </Card>
 
@@ -7143,6 +7172,45 @@ function SettingsView({
           </div>
           <button className="rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-bold" onClick={() => { setConfirmClear(false); clearAiHistory(); }} type="button">{t("Solo borrar historial IA", "Only clear AI history")}</button>
         </div>
+      </Modal>
+
+      {/* Confirm base-currency change: show the rate + what converts, then rebase amounts. */}
+      <Modal
+        open={currencyChange !== null}
+        onClose={() => setCurrencyChange(null)}
+        title={t("Cambiar moneda base", "Change base currency")}
+        footer={
+          <>
+            <button className="rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-bold" onClick={() => setCurrencyChange(null)} type="button">{t("Cancelar", "Cancel")}</button>
+            <button className="rounded-2xl bg-[var(--lime)] px-5 py-3 text-sm font-bold" onClick={applyCurrencyChange} type="button">{t("Convertir", "Convert")}</button>
+          </>
+        }
+      >
+        {currencyChange && (
+          <div className="grid gap-4 text-sm text-slate-700">
+            <p>
+              {t(
+                `Cambiarás la moneda de tu hogar de ${currencyLabel(state.currency)} a ${currencyLabel(currencyChange.to)}.`,
+                `You're changing your household currency from ${currencyLabel(state.currency)} to ${currencyLabel(currencyChange.to)}.`,
+              )}
+            </p>
+            <div className="rounded-2xl bg-white/70 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{t("Tasa de cambio", "Exchange rate")}</p>
+              <p className="serif mt-1 text-lg font-bold">{`1 ${state.currency} = ${Number(currencyChange.rate.toPrecision(4))} ${currencyChange.to}`}</p>
+              <p className="mt-1 text-xs text-slate-500">
+                {currencyChange.source === "api"
+                  ? t(`Tasa de mercado del ${currencyChange.date}.`, `Market rate as of ${currencyChange.date}.`)
+                  : t("Tasa de referencia (sin conexión). Puedes ajustar montos luego si hace falta.", "Reference rate (offline). You can adjust amounts later if needed.")}
+              </p>
+            </div>
+            <p>
+              {t(
+                "Convertiremos tus totales: movimientos, presupuestos, metas, deudas y patrimonio. Tus cuentas conservan su propia moneda y los montos originales de cada movimiento no cambian.",
+                "We'll convert your totals: transactions, budgets, goals, debts and net worth. Your accounts keep their own currency and each movement's original amount stays the same.",
+              )}
+            </p>
+          </div>
+        )}
       </Modal>
     </ViewShell>
   );
