@@ -66,13 +66,13 @@ export function PaywallView({
         <div className="min-w-0">
           <p className="kicker">{t("Plan y suscripción", "Plan & subscription")}</p>
           <h2 className="serif mt-1.5 text-[1.9rem] font-bold leading-[1.05] tracking-tight md:text-[2.4rem]">{t("La IA de RindoMes es Pro", "RindoMes AI is a Pro feature")}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--text-muted)]">
             {t("Leer recibos y notas con IA requiere una suscripción. Tu plan actual es", "Reading receipts and notes with AI requires a subscription. Your current plan is")}{" "}
             <strong>{isPro ? t("Pro", "Pro") : t("Gratis", "Free")}</strong>. {t("La captura manual y las reglas locales siguen siendo gratis, para siempre.", "Manual capture and local rules stay free, forever.")}
           </p>
         </div>
         <button
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-white"
+          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] transition hover:bg-white"
           onClick={() => setView("home")}
           type="button"
         >
@@ -83,7 +83,7 @@ export function PaywallView({
       {isPro && (
         <section className="glass rounded-3xl border border-[rgba(80,102,0,0.2)] bg-[rgba(204,255,0,0.08)] p-6">
           <p className="serif text-lg font-bold text-[var(--primary)]">{t("Ya tienes Pro activo", "Your Pro plan is active")}</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
+          <p className="mt-1.5 text-sm leading-relaxed text-[var(--text-muted)]">
             {aiOffPreference
               ? t("Tu plan Pro incluye IA, pero la tienes desactivada en Ajustes. Actívala cuando quieras usar la lectura con IA.", "Your Pro plan includes AI, but it's turned off in Settings. Turn it on whenever you want to use AI reading.")
               : t("Puedes usar la lectura de recibos con IA. Recuerda: siempre revisas y apruebas antes de guardar.", "You can use AI receipt reading. Remember: you always review and approve before saving.")}
@@ -101,7 +101,7 @@ export function PaywallView({
           </div>
           <ul className="mt-5 grid gap-3">
             {PRO_FEATURES.map(([es, en]) => (
-              <li className="flex items-start gap-2.5 text-sm text-slate-700" key={es}>
+              <li className="flex items-start gap-2.5 text-sm text-[var(--foreground)]" key={es}>
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--primary)]" />
                 <span>{t(es, en)}</span>
               </li>
@@ -121,7 +121,7 @@ export function PaywallView({
 
               {/* Honest stub surface: whatever the server returns, shown as-is. No fake success. */}
               {result && (
-                <div className="mt-4 rounded-2xl border border-[rgba(80,102,0,0.18)] bg-white/70 px-4 py-3 text-sm leading-relaxed text-slate-700">
+                <div className="mt-4 rounded-2xl border border-[rgba(80,102,0,0.18)] bg-white/70 px-4 py-3 text-sm leading-relaxed text-[var(--foreground)]">
                   <p className="kicker mb-1.5">{result.status === "checkout_not_configured" ? t("Pago aún no disponible", "Payments not available yet") : result.status}</p>
                   <p>{result.message}</p>
                 </div>
@@ -144,8 +144,8 @@ export function PaywallView({
           </div>
           <ul className="mt-5 grid gap-3">
             {FREE_FEATURES.map(([es, en]) => (
-              <li className="flex items-start gap-2.5 text-sm text-slate-700" key={es}>
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+              <li className="flex items-start gap-2.5 text-sm text-[var(--foreground)]" key={es}>
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-[var(--text-subtle)]" />
                 <span>{t(es, en)}</span>
               </li>
             ))}
@@ -158,7 +158,7 @@ export function PaywallView({
             >
               {t("Continuar manualmente", "Continue manually")}
             </button>
-            <p className="mt-3 text-center text-xs text-slate-500">
+            <p className="mt-3 text-center text-xs text-[var(--text-muted)]">
               {t("Sin tarjeta. Captura todo a mano o con reglas locales cuando quieras.", "No card needed. Capture everything by hand or with local rules whenever you like.")}
             </p>
           </div>

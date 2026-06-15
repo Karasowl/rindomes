@@ -132,7 +132,7 @@ export function LanguageToggle() {
           className: `rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-[0.08em] transition ${
             lang === option
               ? "bg-[var(--lime)] text-black shadow-sm"
-              : "text-slate-500 hover:text-slate-800"
+              : "text-[var(--text-muted)] hover:text-[var(--foreground)]"
           }`,
         },
         option.toUpperCase()

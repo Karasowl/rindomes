@@ -53,7 +53,7 @@ export function AuthPanel() {
 
   if (isLoading) {
     return (
-      <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 text-sm text-slate-500">
+      <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 text-sm text-[var(--text-muted)]">
         {t("Cargando sesión…", "Loading session…")}
       </div>
     );
@@ -69,7 +69,7 @@ export function AuthPanel() {
             : t("Sesión iniciada", "Signed in")}
         </p>
         <p className="mt-1 font-semibold">{(user?.email as string) ?? t("Sesión iniciada", "Signed in")}</p>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
           {t(
             "Tu hogar se sincroniza con esta cuenta en cualquier dispositivo.",
             "Your household syncs with this account on any device.",
@@ -169,7 +169,7 @@ export function AuthPanel() {
     return (
       <form className="rounded-2xl border border-[var(--line)] bg-white/70 p-5" onSubmit={handleCode}>
         <p className="kicker text-[var(--primary)]">{t("Verifica tu email", "Verify your email")}</p>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-[var(--text-muted)]">
           {t("Ingresa el código de 6 dígitos que enviamos a", "Enter the 6-digit code we sent to")}{" "}
           <span className="font-semibold">{email}</span>.
         </p>
@@ -200,16 +200,16 @@ export function AuthPanel() {
             : t("Verificar y entrar", "Verify and continue")}
         </button>
         <button
-          className="mt-3 w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-700 disabled:opacity-60"
+          className="mt-3 w-full text-center text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)] disabled:opacity-60"
           onClick={() => void handleResend()}
           disabled={resending}
           type="button"
         >
           {resending ? t("Reenviando…", "Resending…") : t("Reenviar código", "Resend code")}
         </button>
-        <p className="mt-3 text-center text-xs text-slate-400">
+        <p className="mt-3 text-center text-xs text-[var(--text-subtle)]">
           <button
-            className="font-semibold underline underline-offset-2 hover:text-slate-600"
+            className="font-semibold underline underline-offset-2 hover:text-[var(--text-muted)]"
             onClick={resetToCredentials}
             type="button"
           >
@@ -226,7 +226,7 @@ export function AuthPanel() {
       <p className="kicker text-[var(--primary)]">
         {flow === "signIn" ? t("Iniciar sesión", "Sign in") : t("Crear cuenta", "Create account")}
       </p>
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-[var(--text-muted)]">
         {t("Sincroniza tu hogar entre dispositivos.", "Sync your household across devices.")}
       </p>
       <div className="mt-4 space-y-3">
@@ -265,7 +265,7 @@ export function AuthPanel() {
             : t("Crear cuenta", "Create account")}
       </button>
       <button
-        className="mt-3 w-full text-center text-sm font-semibold text-slate-500 hover:text-slate-700"
+        className="mt-3 w-full text-center text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)]"
         onClick={() => {
           setFlow(flow === "signIn" ? "signUp" : "signIn");
           setError("");

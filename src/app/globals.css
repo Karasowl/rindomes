@@ -11,6 +11,14 @@
   --lime: #ccff00;
   --danger: #ba1a1a;
   --ink: #121414;
+  /* Escala SEMÁNTICA de texto, con contraste verificado WCAG AA+ sobre los fondos
+     claros de la app (crema #fef8f5 y superficies). Reemplaza a los grises `slate`
+     fríos de Tailwind, que fallaban contraste y desentonaban con la paleta oliva:
+       --foreground   título/cuerpo fuerte (#1d1b1a) · ~16:1
+       --text-muted   secundario               · ~7.4:1 sobre crema, ~6.3:1 sobre superficie
+       --text-subtle  terciario / etiquetas    · ~5.3:1 sobre crema, ~4.6:1 sobre superficie */
+  --text-muted: #4f534b;
+  --text-subtle: #65695f;
   --shadow: 0 18px 60px -32px rgba(18, 20, 20, 0.32), 0 8px 24px -18px rgba(18, 20, 20, 0.18);
   /* --font-inter and --font-libre-caslon are provided by next/font (see layout.tsx). */
   --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
@@ -140,7 +148,8 @@ textarea {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: rgba(80, 102, 0, 0.82);
+    /* Olive sólido (no al 82%) para que el eyebrow cumpla contraste sobre crema. */
+    color: var(--primary);
   }
 }
 

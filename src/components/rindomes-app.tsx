@@ -185,12 +185,12 @@ function NavButton({ viewKey, active, onClick }: { viewKey: View; active: boolea
       className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] transition ${
         active
           ? "bg-[rgba(204,255,0,0.5)] font-bold text-[var(--ink)] shadow-sm"
-          : "text-slate-600 hover:bg-white/60"
+          : "text-[var(--text-muted)] hover:bg-white/60"
       }`}
       onClick={onClick}
       type="button"
     >
-      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[var(--primary)]" : "text-slate-500"}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} />
       <span className="truncate">{navLabel(viewKey, t)}</span>
     </button>
   );
@@ -230,7 +230,7 @@ function AuthLanding() {
         <div className="text-center">
           <Landmark className="mx-auto h-9 w-9 text-[var(--primary)]" />
           <h1 className="serif mt-6 text-5xl font-bold italic tracking-tight">RindoMes</h1>
-          <p className="mt-4 text-lg text-slate-600">
+          <p className="mt-4 text-lg text-[var(--text-muted)]">
             {t("Tus finanzas en la nube, sincronizadas en el celular y la computadora.", "Your finances in the cloud, synced across your phone and computer.")}
           </p>
         </div>
@@ -648,7 +648,7 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
             ))}
           </div>
           <button
-            className="mt-1 flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400 transition hover:bg-white/60"
+            className="mt-1 flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)] transition hover:bg-white/60"
             onClick={() => setShowAdvanced((open) => !open)}
             type="button"
             aria-expanded={showAdvanced || advancedViews.has(view)}
@@ -659,7 +659,7 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
           {(showAdvanced || advancedViews.has(view)) &&
             advancedGroups.map((group) => (
               <div className="flex flex-col gap-0.5" key={group.label}>
-                <p className="px-3 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{advancedGroupLabel(group.label, t)}</p>
+                <p className="px-3 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{advancedGroupLabel(group.label, t)}</p>
                 {group.items.map((viewKey) => (
                   <NavButton key={viewKey} viewKey={viewKey} active={view === viewKey} onClick={() => navigate(viewKey)} />
                 ))}
@@ -673,13 +673,13 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
             </div>
           )}
           {!authed && state.user.status === "signed_out" && view !== "account" && (
-            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm text-slate-700">
+            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm text-[var(--foreground)]">
               {t("Estas usando RindoMes sin sesion. Crea o inicia una cuenta local para guardar identidad, permisos y sincronizacion futura con Convex.", "You're using RindoMes without signing in. Create or sign in to a local account to save your identity, permissions, and future Convex sync.")}
               <button className="ml-3 font-bold text-[var(--primary)]" onClick={() => navigate("account")} type="button">{t("Abrir cuenta", "Open account")}</button>
             </div>
           )}
           {!authed && currentMember?.role === "viewer" && view !== "account" && (
-            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm text-slate-700">
+            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm text-[var(--foreground)]">
               {t(`Vista de solo lectura para ${currentMember.name}. Puedes consultar y exportar, pero no cambiar datos financieros.`, `Read-only view for ${currentMember.name}. You can browse and export, but not change financial data.`)}
             </div>
           )}
@@ -777,7 +777,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
         type="button"
         aria-label={t("Mes anterior", "Previous month")}
         onClick={() => onChange(prevMonthKey(month))}
-        className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white"
+        className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white"
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
@@ -814,7 +814,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
                   type="button"
                   aria-label={t("Año anterior", "Previous year")}
                   onClick={() => setViewYear((y) => y - 1)}
-                  className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100"
+                  className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-slate-100"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </button>
@@ -823,7 +823,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
                   type="button"
                   aria-label={t("Año siguiente", "Next year")}
                   onClick={() => setViewYear((y) => y + 1)}
-                  className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100"
+                  className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-slate-100"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -844,7 +844,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
                           ? "bg-[var(--lime)] text-black shadow-sm"
                           : isReal
                             ? "text-[var(--primary)] ring-1 ring-inset ring-[var(--primary)]/40 hover:bg-slate-50"
-                            : "text-slate-600 hover:bg-slate-100"
+                            : "text-[var(--text-muted)] hover:bg-slate-100"
                       }`}
                     >
                       {name}
@@ -860,7 +860,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
         type="button"
         aria-label={t("Mes siguiente", "Next month")}
         onClick={() => onChange(nextMonthKey(month))}
-        className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white"
+        className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white"
       >
         <ChevronRight className="h-4 w-4" />
       </button>
@@ -896,7 +896,7 @@ function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail =
         <div className="flex items-center gap-3">
           {canGoBack && (
             <button
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/70 text-slate-700 shadow-sm transition hover:bg-white"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/70 text-[var(--foreground)] shadow-sm transition hover:bg-white"
               onClick={onBack}
               type="button"
               aria-label={t("Atrás", "Back")}
@@ -913,8 +913,8 @@ function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail =
         <MonthSwitcher month={state.activeMonth} onChange={onChangeMonth} />
         <div className="flex items-center gap-2">
           <LanguageToggle />
-          <button className="hidden max-w-[180px] rounded-full bg-white/60 px-4 py-2 text-left text-xs font-semibold text-slate-700 transition hover:bg-white md:block" onClick={() => setView("account")} type="button">
-            <span className="block text-[10px] uppercase tracking-[0.16em] text-slate-500">{signedIn ? t("Sesión", "Session") : t("Sin sesión", "Signed out")}</span>
+          <button className="hidden max-w-[180px] rounded-full bg-white/60 px-4 py-2 text-left text-xs font-semibold text-[var(--foreground)] transition hover:bg-white md:block" onClick={() => setView("account")} type="button">
+            <span className="block text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{signedIn ? t("Sesión", "Session") : t("Sin sesión", "Signed out")}</span>
             <span className="block truncate">{accountLabel}</span>
           </button>
         <div className="relative">
@@ -942,13 +942,13 @@ function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail =
                       <div>
                         <p className={`text-xs font-bold uppercase tracking-[0.16em] ${notification.tone === "danger" ? "text-[var(--danger)]" : "text-[var(--primary)]"}`}>{notification.label}</p>
                         <h3 className="mt-1 font-semibold">{notification.title}</h3>
-                        <p className="mt-1 text-sm text-slate-600">{notification.subtitle}</p>
+                        <p className="mt-1 text-sm text-[var(--text-muted)]">{notification.subtitle}</p>
                       </div>
                       <span className="rounded-full bg-[var(--lime)] px-3 py-1 text-xs font-bold text-black">{notification.action}</span>
                     </div>
                   </button>
                 ))}
-                {!notifications.length && <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-slate-600">{t("No hay revisiones, recibos, cierres ni reglas pendientes.", "No pending reviews, receipts, closings, or rules.")}</p>}
+                {!notifications.length && <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-[var(--text-muted)]">{t("No hay revisiones, recibos, cierres ni reglas pendientes.", "No pending reviews, receipts, closings, or rules.")}</p>}
               </div>
             </div>
           )}
@@ -971,7 +971,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           <div className="w-full rounded-t-3xl border-t border-white/80 bg-[rgba(254,248,245,0.97)] p-5 pb-8 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="serif text-2xl font-bold">{t("Todas las vistas", "All views")}</h2>
-              <button className="grid h-9 w-9 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition hover:bg-white/80" onClick={() => setMoreOpen(false)} type="button" aria-label={t("Cerrar", "Close")}>
+              <button className="grid h-9 w-9 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-white/80" onClick={() => setMoreOpen(false)} type="button" aria-label={t("Cerrar", "Close")}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -981,7 +981,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
                 const active = view === item.view;
                 return (
                   <button
-                    className={`flex flex-col items-center gap-1.5 rounded-2xl p-3 text-[11px] transition ${active ? "bg-[rgba(204,255,0,0.3)] font-semibold text-[var(--primary)]" : "text-slate-600 hover:bg-white/60"}`}
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl p-3 text-[11px] transition ${active ? "bg-[rgba(204,255,0,0.3)] font-semibold text-[var(--primary)]" : "text-[var(--text-muted)] hover:bg-white/60"}`}
                     key={item.view}
                     onClick={() => { setView(item.view); setMoreOpen(false); }}
                     type="button"
@@ -1014,7 +1014,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           if (slot === "more") {
             return (
               <button
-                className={`flex flex-col items-center gap-0.5 text-[10px] ${moreOpen ? "font-semibold text-[var(--primary)]" : "text-slate-500"}`}
+                className={`flex flex-col items-center gap-0.5 text-[10px] ${moreOpen ? "font-semibold text-[var(--primary)]" : "text-[var(--text-muted)]"}`}
                 key="more"
                 onClick={() => setMoreOpen(true)}
                 type="button"
@@ -1031,7 +1031,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           const label = slot === "movements" ? t("Movs", "Txns") : slot === "review" ? t("Revisar", "Review") : navLabel(slot, t);
           return (
             <button
-              className={`flex flex-col items-center gap-0.5 text-[10px] ${active ? "text-[var(--primary)]" : "text-slate-500"}`}
+              className={`flex flex-col items-center gap-0.5 text-[10px] ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`}
               key={slot}
               onClick={() => setView(slot)}
               type="button"
@@ -1138,7 +1138,7 @@ function HomeView({
           en cero y ofrece volver al mes actual (en vez de dejar al usuario confundido). */}
       {(isFutureMonth || (state.activeMonth !== realMonth && !monthHasData)) && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--lime)] bg-[rgba(204,255,0,0.14)] px-5 py-3.5 text-sm">
-          <span className="font-medium text-slate-700">
+          <span className="font-medium text-[var(--foreground)]">
             {isFutureMonth
               ? t(`Estás viendo ${formatMonthLabel(state.activeMonth, lang)}, un mes que aún no llega. Lo que registres con esa fecha aparecerá aquí.`, `You're viewing ${formatMonthLabel(state.activeMonth, lang)}, a month that hasn't arrived yet. Anything dated then will show up here.`)
               : t(`No hubo movimientos en ${formatMonthLabel(state.activeMonth, lang)}.`, `No transactions in ${formatMonthLabel(state.activeMonth, lang)}.`)}
@@ -1189,7 +1189,7 @@ function HomeView({
                   <div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${Math.min(100, Math.round((item.spent / topSpent) * 100))}%` }} />
                 </div>
                 {item.detail && (
-                  <p className="mt-1 truncate text-xs text-slate-500">{item.count > 1 ? t(`${item.count} movs · el mayor: ${item.detail}`, `${item.count} txns · biggest: ${item.detail}`) : item.detail}</p>
+                  <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{item.count > 1 ? t(`${item.count} movs · el mayor: ${item.detail}`, `${item.count} txns · biggest: ${item.detail}`) : item.detail}</p>
                 )}
               </div>
             ))}
@@ -1209,7 +1209,7 @@ function HomeView({
           </div>
           <div className="mt-4 space-y-2.5">
             {observations.map((text, index) => (
-              <div className="rounded-2xl bg-white/55 p-4 text-sm font-medium text-slate-700" key={index}>{text}</div>
+              <div className="rounded-2xl bg-white/55 p-4 text-sm font-medium text-[var(--foreground)]" key={index}>{text}</div>
             ))}
             {!observations.length && (
               <EmptyState title={t("Aún sin lecturas", "Nothing to read yet")} subtitle={t("Con unos cuantos movimientos la app empieza a decirte qué es inusual, qué se repite y dónde podrías ajustar.", "With a few transactions the app starts telling you what's unusual, what repeats, and where you could adjust.")} />
@@ -1236,7 +1236,7 @@ function HomeView({
           <div className="mt-4 space-y-2.5">
             {state.review.slice(0, 3).map((item) => (
               <div className="rounded-2xl bg-white/55 p-4" key={item.id}>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{reviewReasonLabel(item.reason)}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{reviewReasonLabel(item.reason)}</p>
                 <div className="mt-1.5 flex items-center justify-between gap-3">
                   <span className="font-semibold">{item.title}</span>
                   <span className="serif text-lg font-bold">{formatMoney(item.amountCents, state.currency)}</span>
@@ -1452,7 +1452,7 @@ function SetupView({
                   </span>
                   <span className="min-w-0">
                     <span className="block font-bold">{option.title}</span>
-                    <span className="mt-1 block text-sm text-slate-600">{option.hint}</span>
+                    <span className="mt-1 block text-sm text-[var(--text-muted)]">{option.hint}</span>
                   </span>
                 </button>
               );
@@ -1467,11 +1467,11 @@ function SetupView({
             <Select label={t("Moneda base", "Base currency")} value={draft.currency} options={supportedCurrencies} render={currencyLabel} onChange={(value) => setDraft((current) => ({ ...current, currency: value as CurrencyCode }))} />
             <label className="grid gap-2 text-sm font-semibold">
               {t("Mes activo", "Active month")}
-              <input className="field bg-white/40 text-slate-500" value={draft.activeMonth} readOnly aria-readonly="true" />
+              <input className="field bg-white/40 text-[var(--text-muted)]" value={draft.activeMonth} readOnly aria-readonly="true" />
             </label>
           </div>
           <details className="mt-4">
-            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{t("Configuración avanzada", "Advanced settings")}</summary>
+            <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{t("Configuración avanzada", "Advanced settings")}</summary>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Select label={t("Tipo de uso", "Use case")} value={draft.useCase} options={["personal", "familia", "negocio", "prueba"]} render={(value) => labelForUseCase(value)} onChange={(value) => setDraft((current) => ({ ...current, useCase: value }))} />
               <Select label={t("Modo inicial", "Starting mode")} value={draft.mode} options={["tracker", "monthly-plan", "zero"]} render={(value) => modeLabel(value as Mode, t)} onChange={(value) => setDraft((current) => ({ ...current, mode: value as Mode }))} />
@@ -1498,7 +1498,7 @@ function SetupView({
             </label>
             {showBudget && (
               <>
-                <p className="mt-3 text-sm text-slate-600">{t("Las demás categorías se crean en $0 y las ajustas cuando quieras.", "Every other category starts at $0, and you can adjust them whenever you like.")}</p>
+                <p className="mt-3 text-sm text-[var(--text-muted)]">{t("Las demás categorías se crean en $0 y las ajustas cuando quieras.", "Every other category starts at $0, and you can adjust them whenever you like.")}</p>
                 <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-4">
                   <Input label={t("Ingreso esperado", "Expected income")} value={draft.expectedIncome} onChange={(value) => setDraft((current) => ({ ...current, expectedIncome: value }))} placeholder="0.00" />
                   <Input label={t("Hogar", "Housing")} value={draft.housingPlan} onChange={(value) => setDraft((current) => ({ ...current, housingPlan: value }))} placeholder="0.00" />
@@ -1565,8 +1565,8 @@ function SpacesView({ state, setState }: { state: AppState; setState: Dispatch<S
           <Metric label={t("Espacios", "Spaces")} value={`${limits.spacesUsed}/${limits.spacesLimit}`} tone={limits.spacesUsed >= limits.spacesLimit ? "bad" : undefined} />
           <Metric label={t("Miembros", "Members")} value={`${limits.membersUsed}/${limits.membersLimit}`} tone={!canAddMembers ? "bad" : undefined} />
         </div>
-        <details className="mt-4 border-t border-[var(--line)] pt-3 text-sm text-slate-600">
-          <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{t("Detalles de uso", "Usage details")}</summary>
+        <details className="mt-4 border-t border-[var(--line)] pt-3 text-sm text-[var(--text-muted)]">
+          <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{t("Detalles de uso", "Usage details")}</summary>
           <div className="mt-3 grid grid-cols-2 gap-4">
             <Metric label={t("Créditos IA", "AI credits")} value={`${limits.aiUsed}/${limits.aiLimit}`} />
             <Metric label={t("Almacenamiento (MB)", "Storage (MB)")} value={`${limits.storageUsed}/${limits.storageLimit}`} />
@@ -1590,8 +1590,8 @@ function SpacesView({ state, setState }: { state: AppState; setState: Dispatch<S
                 </span>
                 <div className="min-w-0">
                   <p className="font-bold">{subscriptionPlanLabel(plan)}{selected ? t(" · Activo", " · Active") : ""}</p>
-                  <p className="mt-1 text-sm text-slate-600">{plan === "pro" ? t("Más IA y adjuntos.", "More AI and attachments.") : t("Generoso para empezar a registrar tu mes.", "Plenty to get started tracking your month.")}</p>
-                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{planLimits}</p>
+                  <p className="mt-1 text-sm text-[var(--text-muted)]">{plan === "pro" ? t("Más IA y adjuntos.", "More AI and attachments.") : t("Generoso para empezar a registrar tu mes.", "Plenty to get started tracking your month.")}</p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--text-subtle)]">{planLimits}</p>
                 </div>
               </div>
             );
@@ -1758,7 +1758,7 @@ function PlanView({
         footer={
           <>
             <button
-              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-white/70"
+              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-white/70"
               onClick={() => setSelectedCategoryId(null)}
               type="button"
             >
@@ -1778,9 +1778,9 @@ function PlanView({
         {selectedUsage && (
           <div className="grid gap-5">
             <div>
-              <p className="text-sm text-slate-600">{subcategoryPreview(selectedCategory?.subcategories, t("Sin datos", "No data"))}</p>
+              <p className="text-sm text-[var(--text-muted)]">{subcategoryPreview(selectedCategory?.subcategories, t("Sin datos", "No data"))}</p>
               <Progress className="mt-3" value={selectedUsage.ratio} danger={selectedUsage.ratio > 1} />
-              <div className="mt-2 flex justify-between text-sm text-slate-600">
+              <div className="mt-2 flex justify-between text-sm text-[var(--text-muted)]">
                 <span>{t(`${formatMoney(selectedUsage.spent, state.currency)} de ${formatMoney(selectedUsage.plannedCents, state.currency)}`, `${formatMoney(selectedUsage.spent, state.currency)} of ${formatMoney(selectedUsage.plannedCents, state.currency)}`)}</span>
                 <span className={selectedUsage.ratio > 1 ? "font-bold text-[var(--danger)]" : "font-semibold"}>{Math.round(selectedUsage.ratio * 100)}%</span>
               </div>
@@ -1820,13 +1820,13 @@ function PlanView({
                       <div className="min-w-0">
                         <p className="kicker">{transaction.date} · {transactionStatusLabel(transaction.status)}</p>
                         <h5 className="truncate font-semibold">{transaction.description}</h5>
-                        <p className="truncate text-sm text-slate-600">{transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : transaction.person ?? t("Sin datos", "No details")}{transaction.subcategory ? ` · ${transaction.subcategory}` : ""}</p>
+                        <p className="truncate text-sm text-[var(--text-muted)]">{transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : transaction.person ?? t("Sin datos", "No details")}{transaction.subcategory ? ` · ${transaction.subcategory}` : ""}</p>
                       </div>
                       <span className="shrink-0 font-semibold">{formatMoney(transaction.amountCents, state.currency)}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-6 text-center text-sm text-slate-600">
+                  <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-6 text-center text-sm text-[var(--text-muted)]">
                     {t(`Esta categoria no tiene movimientos en ${state.activeMonth}.`, `This category has no transactions in ${state.activeMonth}.`)}
                   </div>
                 )}
@@ -1844,7 +1844,7 @@ function PlanView({
         footer={
           <>
             <button
-              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-white/70"
+              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-white/70"
               onClick={() => setMoveOpen(false)}
               type="button"
             >
@@ -2047,8 +2047,8 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
             sin saltar entre pantallas distintas del menú. */}
         <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[var(--surface-soft)] p-1.5">
           <span className="rounded-xl bg-[var(--lime)] px-2 py-2.5 text-center text-xs font-bold text-black shadow-sm">{t("Escribir", "Type")}</span>
-          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-white/70" onClick={() => setView("ai")} type="button">{t("Con IA", "With AI")}</button>
-          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-white/70" onClick={() => setView("receipt-capture")} type="button">{t("Recibo", "Receipt")}</button>
+          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)] transition hover:bg-white/70" onClick={() => setView("ai")} type="button">{t("Con IA", "With AI")}</button>
+          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)] transition hover:bg-white/70" onClick={() => setView("receipt-capture")} type="button">{t("Recibo", "Receipt")}</button>
         </div>
         {/* Primario · Monto + Categoría */}
         <Card>
@@ -2056,7 +2056,7 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
           <div className="grid grid-cols-4 gap-1 rounded-2xl bg-[var(--surface-soft)] p-1.5 lg:grid-cols-7">
             {captureTypes.map((type) => (
               <button
-                className={`rounded-xl px-2 py-2 text-xs font-semibold transition ${form.type === type ? "bg-[var(--lime)] text-black shadow-sm" : "text-slate-600 hover:bg-white/70"}`}
+                className={`rounded-xl px-2 py-2 text-xs font-semibold transition ${form.type === type ? "bg-[var(--lime)] text-black shadow-sm" : "text-[var(--text-muted)] hover:bg-white/70"}`}
                 key={type}
                 onClick={() => {
                   const linked = type === "refund" ? refundableTransactions[0] : undefined;
@@ -2082,16 +2082,16 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
 
           {/* Monto · protagonista */}
           <div className="mt-7 flex items-end justify-center gap-1.5">
-            <span className="serif pb-2 text-3xl font-bold text-slate-400">{currencySymbol}</span>
+            <span className="serif pb-2 text-3xl font-bold text-[var(--text-subtle)]">{currencySymbol}</span>
             <input
-              className="serif w-full max-w-[7ch] bg-transparent text-center text-6xl font-bold leading-none outline-none placeholder:text-slate-300"
+              className="serif w-full max-w-[7ch] bg-transparent text-center text-6xl font-bold leading-none outline-none placeholder:text-[var(--text-subtle)]"
               inputMode="decimal"
               placeholder="0"
               value={form.amount}
               onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
             />
           </div>
-          <p className="mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t("Monto", "Amount")}</p>
+          <p className="mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--text-subtle)]">{t("Monto", "Amount")}</p>
 
           {frequentAmounts.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -2192,7 +2192,7 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
             </label>
 
             {/* Moneda y tasa */}
-            <button className="text-left text-xs font-semibold text-slate-500 transition hover:text-[var(--primary)]" onClick={() => setShowCurrency((open) => !open)} type="button">
+            <button className="text-left text-xs font-semibold text-[var(--text-muted)] transition hover:text-[var(--primary)]" onClick={() => setShowCurrency((open) => !open)} type="button">
               {otherCurrency || showCurrency ? t("Moneda y tasa ▴", "Currency and rate ▴") : t("¿Otra moneda? ▾", "Another currency? ▾")}
             </button>
             {(showCurrency || otherCurrency) && (
@@ -2204,7 +2204,7 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
                     <input className="field" inputMode="decimal" value={form.exchangeRate} onChange={(event) => setForm((current) => ({ ...current, exchangeRate: Number(event.target.value) || 1, exchangeRateSource: "manual" }))} />
                   </label>
                 </div>
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-xs text-[var(--text-muted)]">
                   <p>{t("Se guarda como", "Saved as")} <strong>{formatMoney(Math.round(converted), state.currency)}</strong></p>
                   <button className="rounded-full bg-white px-3 py-1.5 font-semibold text-[var(--primary)] shadow-sm" disabled={rateStatus === "loading"} onClick={() => void refreshRate()} type="button">
                     {rateStatus === "loading" ? t("Actualizando…", "Updating…") : t("Actualizar tasa", "Refresh rate")}
@@ -2215,8 +2215,8 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
 
             {/* Guía según el tipo + ajuste de saldo */}
             {form.type === "transfer" && creditAccounts.length > 0 && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-slate-600">
-                <p className="font-semibold text-slate-800">{t("Pago de tarjeta", "Card payment")}</p>
+              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
+                <p className="font-semibold text-[var(--foreground)]">{t("Pago de tarjeta", "Card payment")}</p>
                 <p className="mt-1">{t("Registra el pago como transferencia a la cuenta de crédito para no duplicar el gasto.", "Record the payment as a transfer to the credit account so you don't double-count the expense.")}</p>
                 <button
                   className="mt-3 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-black"
@@ -2237,18 +2237,18 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
               </div>
             )}
             {["debt_payment", "saving", "investment"].includes(form.type) && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-slate-600">
+              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
                 {form.type === "debt_payment" && t("Cuenta como pago de deuda. Si pagas tarjeta por compras ya registradas, usa Transferencia.", "Counts as a debt payment. If you're paying a card for purchases already recorded, use Transfer.")}
                 {form.type === "saving" && t("Cuenta dentro de tu ahorro real del mes.", "Counts toward your real savings for the month.")}
                 {form.type === "investment" && t("Cuenta como inversión real y puede vincularse con patrimonio neto.", "Counts as a real investment and can link to net worth.")}
               </div>
             )}
             {form.type === "refund" && linkedTransaction && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-slate-600">
+              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
                 {t("Reduce el gasto real de", "Reduces the real spending of")} {categoryById(state.categories, linkedTransaction.categoryId)?.name ?? t("la categoría original", "the original category")}.
               </div>
             )}
-            <button className="text-left text-xs font-semibold text-slate-500 transition hover:text-[var(--primary)]" onClick={() => setView("accounts")} type="button">{t("Ajuste de saldo", "Balance adjustment")}</button>
+            <button className="text-left text-xs font-semibold text-[var(--text-muted)] transition hover:text-[var(--primary)]" onClick={() => setView("accounts")} type="button">{t("Ajuste de saldo", "Balance adjustment")}</button>
           </div>
         </Modal>
 
@@ -2418,14 +2418,14 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
             {t("Sugerir con reglas locales", "Suggest with local rules")}
           </button>
           {!aiAvailable && (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[rgba(80,102,0,0.18)] bg-[rgba(204,255,0,0.08)] px-4 py-3 text-xs text-slate-700">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[rgba(80,102,0,0.18)] bg-[rgba(204,255,0,0.08)] px-4 py-3 text-xs text-[var(--foreground)]">
               <span>{t("La IA es parte de RindoMes Pro.", "AI is part of RindoMes Pro.")}</span>
               <button className="shrink-0 rounded-full bg-[var(--lime)] px-3 py-1.5 text-xs font-bold text-black" onClick={onOpenPaywall} type="button">
                 {t("Activar Pro", "Activate Pro")}
               </button>
             </div>
           )}
-          {aiStatus && <p className="mt-3 rounded-2xl bg-white/55 px-4 py-3 text-sm text-slate-600">{aiStatus}</p>}
+          {aiStatus && <p className="mt-3 rounded-2xl bg-white/55 px-4 py-3 text-sm text-[var(--text-muted)]">{aiStatus}</p>}
 
           <details className="mt-4 rounded-2xl bg-[var(--surface-soft)] p-4">
             <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--primary)]">{t("Opciones avanzadas", "Advanced options")}</summary>
@@ -2443,20 +2443,20 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
               <span className="inline-flex items-center gap-2"><Upload className="h-4 w-4" /> {t("Recibos o screenshots para revisar", "Receipts or screenshots to review")}</span>
               <input className="hidden" type="file" multiple onChange={(event) => setReceiptNames(Array.from(event.target.files ?? []).map((file) => file.name))} />
             </label>
-            {receiptNames.length > 0 && <p className="mt-2 text-sm text-slate-600">{receiptNames.join(", ")}</p>}
+            {receiptNames.length > 0 && <p className="mt-2 text-sm text-[var(--text-muted)]">{receiptNames.join(", ")}</p>}
           </details>
         </Card>
 
         <Card>
           <h3 className="serif text-xl font-bold">{t("Sugerencia", "Suggestion")}</h3>
-          {!suggestion && <p className="mt-3 text-sm text-slate-600">{t("Analiza un texto para ver monto, categoria, cuenta y nivel de confianza.", "Analyze a text to see amount, category, account and confidence level.")}</p>}
+          {!suggestion && <p className="mt-3 text-sm text-[var(--text-muted)]">{t("Analiza un texto para ver monto, categoria, cuenta y nivel de confianza.", "Analyze a text to see amount, category, account and confidence level.")}</p>}
           {suggestion && (
             <div className="mt-5 grid gap-4">
               <Metric label={t("Confianza", "Confidence")} value={`${Math.round(suggestion.confidence * 100)}%`} tone={suggestion.needsReview ? "bad" : "good"} />
               <ListCard title={suggestion.description} subtitle={`${categoryById(state.categories, suggestion.categoryId)?.name ?? t("Categoria", "Category")} · ${state.accounts.find((account) => account.id === suggestion.accountId)?.name ?? t("Cuenta", "Account")}`} value={formatMoney(toCents(suggestion.amount), suggestion.currency)} />
               <div className="rounded-2xl bg-white/50 p-4">
                 <p className="font-semibold">{t("Razones", "Reasons")}</p>
-                <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                <ul className="mt-2 space-y-1 text-sm text-[var(--text-muted)]">
                   {suggestion.reasons.map((reason) => <li key={reason}>{reason}</li>)}
                 </ul>
               </div>
@@ -2476,13 +2476,13 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
                 <div>
                   <p className="kicker">{aiProviderLabel(action.provider)} · {aiActionKindLabel(action.kind)} · {aiActionStatusLabel(action.status)}</p>
                   <h4 className="mt-1 font-semibold">{action.outputSummary}</h4>
-                  <p className="mt-1 text-sm text-slate-600">{action.inputPreview}</p>
+                  <p className="mt-1 text-sm text-[var(--text-muted)]">{action.inputPreview}</p>
                 </div>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-bold">{action.creditsUsed} {t("credito(s)", "credit(s)")}</span>
               </div>
             </div>
           ))}
-          {!state.aiActions.length && <p className="rounded-2xl border border-dashed border-[var(--line)] p-5 text-sm text-slate-600">{t("No hay acciones IA guardadas.", "No saved AI actions.")}</p>}
+          {!state.aiActions.length && <p className="rounded-2xl border border-dashed border-[var(--line)] p-5 text-sm text-[var(--text-muted)]">{t("No hay acciones IA guardadas.", "No saved AI actions.")}</p>}
         </div>
       </Card>
     </ViewShell>
@@ -2717,7 +2717,7 @@ function ReceiptsView({
         <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <h3 className="serif text-xl font-bold">{t("Subir comprobantes", "Upload receipts")}</h3>
-            <p className="mt-2 text-sm text-slate-600">{t("Sube recibos para crear movimientos.", "Upload receipts to create transactions.")}</p>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Sube recibos para crear movimientos.", "Upload receipts to create transactions.")}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -2767,10 +2767,10 @@ function ReceiptsView({
             />
           ))}
           {!state.receipts.length && (
-            <p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center text-sm text-slate-600">{t("Todavía no hay recibos.", "No receipts yet.")}</p>
+            <p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center text-sm text-[var(--text-muted)]">{t("Todavía no hay recibos.", "No receipts yet.")}</p>
           )}
           {Boolean(state.receipts.length) && !filteredReceipts.length && (
-            <p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center text-sm text-slate-600">{t("No hay recibos con este estado.", "No receipts with this status.")}</p>
+            <p className="rounded-2xl border border-dashed border-[var(--line)] p-6 text-center text-sm text-[var(--text-muted)]">{t("No hay recibos con este estado.", "No receipts with this status.")}</p>
           )}
         </div>
       </Card>
@@ -2816,16 +2816,16 @@ function ReceiptsView({
                 <div className="mt-2 flex items-start justify-between gap-3">
                   <div>
                     <p className="font-bold">{selectedSuggestion.description}</p>
-                    <p className="mt-1 text-slate-600">{categoryById(state.categories, selectedSuggestion.categoryId)?.name ?? t("Categoría", "Category")} · {state.accounts.find((account) => account.id === selectedSuggestion.accountId)?.name ?? t("Cuenta", "Account")}</p>
+                    <p className="mt-1 text-[var(--text-muted)]">{categoryById(state.categories, selectedSuggestion.categoryId)?.name ?? t("Categoría", "Category")} · {state.accounts.find((account) => account.id === selectedSuggestion.accountId)?.name ?? t("Cuenta", "Account")}</p>
                   </div>
                   <span className="serif text-2xl font-bold">{formatMoney(toCents(selectedSuggestion.amount), selectedSuggestion.currency)}</span>
                 </div>
-                <p className="mt-3 text-slate-600">{t("Confianza", "Confidence")} {Math.round(selectedSuggestion.confidence * 100)}% · {selectedSuggestion.needsReview ? t("requiere revisión", "needs review") : t("lista para confirmar", "ready to confirm")}</p>
+                <p className="mt-3 text-[var(--text-muted)]">{t("Confianza", "Confidence")} {Math.round(selectedSuggestion.confidence * 100)}% · {selectedSuggestion.needsReview ? t("requiere revisión", "needs review") : t("lista para confirmar", "ready to confirm")}</p>
               </div>
             )}
 
             {selected.transactionId && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-slate-600">
+              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
                 {t("Vinculado a", "Linked to")} {state.transactions.find((transaction) => transaction.id === selected.transactionId)?.description ?? selected.transactionId}.
               </div>
             )}
@@ -3175,7 +3175,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
           <Select label={t("Tipo", "Type")} value={typeFilter} options={["all", "income", "expense", "transfer", "refund", "debt_payment", "saving", "investment"]} render={(value) => value === "all" ? t("Todos", "All") : transactionTypeLabel(value)} onChange={setTypeFilter} />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-slate-500">
+          <span className="text-[var(--text-muted)]">
             {showAllMonths
               ? t("Mostrando todos los meses", "Showing all months")
               : t(`Mostrando ${formatMonthLabel(state.activeMonth, lang)}`, `Showing ${formatMonthLabel(state.activeMonth, lang)}`)}
@@ -3197,8 +3197,8 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
               </button>
             ))}
             {!filtered.length && (
-              <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/45 p-6 text-sm text-slate-600">
-                <p className="font-semibold text-slate-800">{t("No hay movimientos con estos filtros.", "No transactions match these filters.")}</p>
+              <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/45 p-6 text-sm text-[var(--text-muted)]">
+                <p className="font-semibold text-[var(--foreground)]">{t("No hay movimientos con estos filtros.", "No transactions match these filters.")}</p>
                 <p className="mt-1">{t("Cambia los filtros o añade un movimiento nuevo.", "Change the filters or add a new transaction.")}</p>
                 <button className="mt-4 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-black" onClick={() => setView("add")} type="button">{t("Añadir movimiento", "Add transaction")}</button>
               </div>
@@ -3212,7 +3212,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
                 {selected.type === "income" || selected.type === "refund" ? "+" : selected.type === "transfer" ? "" : "-"}{formatMoney(selected.amountCents, state.currency)}
               </p>
               <h3 className="serif mt-3 text-2xl font-bold leading-tight">{selected.description}</h3>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
                 {categoryById(state.categories, selected.categoryId)?.name ?? selected.categoryId}
                 {selected.merchant ? ` · ${merchantDisplay(selected.merchant, state.merchantAliases)}` : ""} · {selected.date}
               </p>
@@ -3241,13 +3241,13 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
 
               {selected.linkedTransactionId && (
                 <button
-                  className="mt-4 flex w-full items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/60 p-3 text-left text-sm text-slate-600 transition hover:border-[var(--primary)]/40 hover:bg-white/70"
+                  className="mt-4 flex w-full items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/60 p-3 text-left text-sm text-[var(--text-muted)] transition hover:border-[var(--primary)]/40 hover:bg-white/70"
                   onClick={() => selected.linkedTransactionId && setSelectedId(selected.linkedTransactionId)}
                   type="button"
                 >
                   <span className="kicker shrink-0">{selected.linkKind ?? t("vinculo", "link")}</span>
                   <span className="min-w-0 flex-1 truncate font-semibold text-[var(--ink)]">{state.transactions.find((transaction) => transaction.id === selected.linkedTransactionId)?.description ?? selected.linkedTransactionId}</span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[var(--text-subtle)]" />
                 </button>
               )}
 
@@ -3318,7 +3318,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
         {selected && (
           <div className="grid gap-4">
             <div>
-              <p className="text-sm text-slate-600">{t("Total dividido", "Split total")} {formatMoney(splitTotal, state.currency)} {t("de", "of")} {formatMoney(selected.amountCents, state.currency)}</p>
+              <p className="text-sm text-[var(--text-muted)]">{t("Total dividido", "Split total")} {formatMoney(splitTotal, state.currency)} {t("de", "of")} {formatMoney(selected.amountCents, state.currency)}</p>
               <p className={`mt-1 text-sm font-semibold ${splitTotal === selected.amountCents ? "text-[var(--primary)]" : "text-[var(--danger)]"}`}>
                 {splitTotal === selected.amountCents ? t("Split completo: las categorias reciben el real dividido.", "Split complete: categories receive the divided actual amount.") : `${t("Falta asignar", "Still to assign")} ${formatMoney(selected.amountCents - splitTotal, state.currency)}.`}
               </p>
@@ -3357,7 +3357,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
             {selected.attachmentNames?.length ? (
               <div className="rounded-2xl bg-white/60 p-4">
                 <p className="font-semibold">{t("Adjuntos", "Attachments")}</p>
-                <p className="mt-1 text-sm text-slate-600">{selected.attachmentNames.join(", ")}</p>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">{selected.attachmentNames.join(", ")}</p>
               </div>
             ) : null}
 
@@ -3368,9 +3368,9 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
                 <div className="mt-3 space-y-2">
                   {selected.lineItems.map((item, index) => (
                     <div className="grid grid-cols-[1fr_auto_auto] items-baseline gap-3 text-sm" key={`${item.name}-${index}`}>
-                      <span className="min-w-0 truncate text-slate-700">{item.name || t("Producto", "Product")}</span>
-                      <span className="text-xs text-slate-500">x{item.quantity || 1}</span>
-                      <strong className="text-slate-800">{formatMoney(item.amountCents, selected.originalCurrency)}</strong>
+                      <span className="min-w-0 truncate text-[var(--foreground)]">{item.name || t("Producto", "Product")}</span>
+                      <span className="text-xs text-[var(--text-muted)]">x{item.quantity || 1}</span>
+                      <strong className="text-[var(--foreground)]">{formatMoney(item.amountCents, selected.originalCurrency)}</strong>
                     </div>
                   ))}
                 </div>
@@ -3384,9 +3384,9 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
                   <div className="rounded-xl border border-[var(--line)] bg-white/55 p-3 text-sm" key={event.id}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-semibold">{event.summary}</span>
-                      <span className="text-xs text-slate-500">{new Date(event.at).toLocaleString("es-DO")}</span>
+                      <span className="text-xs text-[var(--text-muted)]">{new Date(event.at).toLocaleString("es-DO")}</span>
                     </div>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">{event.by} · {event.action}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">{event.by} · {event.action}</p>
                   </div>
                 ))}
               </div>
@@ -3686,7 +3686,7 @@ function AccountsView({ state, setState, setView }: { state: AppState; setState:
                 <Input label={t("Notas", "Notes")} value={editDraft.notes} onChange={(value) => setEditDraft((current) => ({ ...current, notes: value }))} placeholder={t("p.ej. Corte del mes, uso", "e.g. Statement date, usage")} />
               </div>
             </details>
-            <p className="text-xs text-slate-500">{t("Confirmada", "Confirmed")} {editAccount.lastConfirmedAt ?? t("sin confirmar", "unconfirmed")}</p>
+            <p className="text-xs text-[var(--text-muted)]">{t("Confirmada", "Confirmed")} {editAccount.lastConfirmedAt ?? t("sin confirmar", "unconfirmed")}</p>
           </form>
         )}
       </Modal>
@@ -3704,7 +3704,7 @@ function AccountsView({ state, setState, setView }: { state: AppState; setState:
       >
         {reconcileAccountItem && (
           <form className="grid gap-4" id="account-reconcile-form" onSubmit={reconcileAccount}>
-            <p className="text-sm text-slate-600">{reconcileAccountItem.name} · {t("Saldo actual", "Current balance")} {formatMoney(reconcileAccountItem.balanceCents, reconcileAccountItem.currency ?? state.currency)}</p>
+            <p className="text-sm text-[var(--text-muted)]">{reconcileAccountItem.name} · {t("Saldo actual", "Current balance")} {formatMoney(reconcileAccountItem.balanceCents, reconcileAccountItem.currency ?? state.currency)}</p>
             <Input label={t("Saldo real", "Actual balance")} value={reconcile.actual} onChange={(value) => setReconcile((current) => ({ ...current, actual: value }))} placeholder="0.00" />
             <Input label={t("Nota", "Note")} value={reconcile.note} onChange={(value) => setReconcile((current) => ({ ...current, note: value }))} placeholder={t("p.ej. Corte del 30 de junio", "e.g. Statement as of June 30")} />
           </form>
@@ -4192,7 +4192,7 @@ function RulesView({ state, setState }: { state: AppState; setState: Dispatch<Se
         <div className="grid gap-5 lg:grid-cols-[1fr_auto_auto] lg:items-center">
           <div>
             <h3 className="serif text-xl font-bold">{t("Operaciones del mes", "Operations this month")}</h3>
-            <p className="mt-2 text-sm text-slate-600">{operationMessage} {t("Hay", "There are")} {state.transactions.filter((transaction) => transaction.status === "needs_review").length} {t("movimientos pendientes de revision.", "transactions pending review.")}</p>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">{operationMessage} {t("Hay", "There are")} {state.transactions.filter((transaction) => transaction.status === "needs_review").length} {t("movimientos pendientes de revision.", "transactions pending review.")}</p>
           </div>
           <button className="rounded-2xl bg-[var(--lime)] px-5 py-3 text-sm font-bold" onClick={() => void generateRecurringForMonth()} type="button">{t("Generar pendientes", "Generate pending")}</button>
           <button className="rounded-2xl bg-white px-5 py-3 text-sm font-bold" onClick={applyAutomationRules} type="button">{t("Aplicar reglas", "Apply rules")}</button>
@@ -4213,12 +4213,12 @@ function RulesView({ state, setState }: { state: AppState; setState: Dispatch<Se
               <div>
                 <p className="kicker">{application.kind === "recurring" ? t("recurrente", "recurring") : t("clasificacion", "classification")} · {new Date(application.createdAt).toLocaleString("es-DO")}</p>
                 <h4 className="mt-1 font-semibold">{application.ruleName}</h4>
-                <p className="text-sm text-slate-600">{application.summary}</p>
+                <p className="text-sm text-[var(--text-muted)]">{application.summary}</p>
               </div>
               <span className="rounded-full bg-[var(--paper)] px-3 py-1 text-xs font-semibold">{application.status === "created_pending" ? t("en revision", "in review") : application.status === "classified" ? t("clasificado", "classified") : t("omitido", "skipped")}</span>
             </div>
           )) : (
-            <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-6 text-center text-sm text-slate-600">
+            <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-6 text-center text-sm text-[var(--text-muted)]">
               {t("Todavia no hay aplicaciones registradas. Genera recurrentes o aplica reglas para ver la bitacora.", "No applications recorded yet. Generate recurring transactions or apply rules to see the log.")}
             </div>
           )}
@@ -4584,7 +4584,7 @@ function ReviewView({ state, setState }: { state: AppState; setState: Dispatch<S
       eyebrow={`${state.review.length} ${t("pendientes", "pending")}`}
       description={t("La IA y las reglas sugieren; el usuario decide.", "AI and rules suggest; you decide.")}
       action={
-        <button className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-white/70" onClick={detectReviewItems} type="button">
+        <button className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-white/70" onClick={detectReviewItems} type="button">
           {t("Actualizar", "Refresh")}
         </button>
       }
@@ -4595,12 +4595,12 @@ function ReviewView({ state, setState }: { state: AppState; setState: Dispatch<S
           return (
             <button
               key={chip.key}
-              className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${active ? "border-transparent bg-[var(--ink)] text-white" : "border-[var(--line)] bg-white/55 text-slate-600 hover:bg-white/80"}`}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${active ? "border-transparent bg-[var(--ink)] text-white" : "border-[var(--line)] bg-white/55 text-[var(--text-muted)] hover:bg-white/80"}`}
               onClick={() => setFilter(chip.key)}
               type="button"
             >
               {chip.label}
-              <span className={`ml-1.5 ${active ? "text-white/70" : chip.danger ? "text-[var(--danger)]" : "text-slate-400"}`}>{chip.count}</span>
+              <span className={`ml-1.5 ${active ? "text-white/70" : chip.danger ? "text-[var(--danger)]" : "text-[var(--text-subtle)]"}`}>{chip.count}</span>
             </button>
           );
         })}
@@ -4669,7 +4669,7 @@ function ReviewEvidence({ state, item }: { state: AppState; item: AppState["revi
 
   if (transaction) {
     return (
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-[var(--text-muted)]">
         {transaction.date} · {categoryById(state.categories, transaction.categoryId)?.name ?? t("Sin categoría", "No category")} · {transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : t("Sin comercio", "No merchant")}
       </p>
     );
@@ -4677,7 +4677,7 @@ function ReviewEvidence({ state, item }: { state: AppState; item: AppState["revi
 
   if (receipt) {
     return (
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-[var(--text-muted)]">
         {receipt.fileName} · {receiptStatusLabel(receipt.status)} · {receipt.merchant ?? t("Sin comercio", "No merchant")}
       </p>
     );
@@ -4685,7 +4685,7 @@ function ReviewEvidence({ state, item }: { state: AppState; item: AppState["revi
 
   if (account) {
     return (
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-[var(--text-muted)]">
         {t("Saldo", "Balance")} {formatMoney(account.balanceCents, account.currency ?? state.currency)} · {t("confirmada", "confirmed")} {account.lastConfirmedAt ?? t("nunca", "never")}
       </p>
     );
@@ -4694,7 +4694,7 @@ function ReviewEvidence({ state, item }: { state: AppState; item: AppState["revi
   if (category) {
     const usage = categoryUsage(state).find((candidate) => candidate.id === category.id);
     return (
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-[var(--text-muted)]">
         {t("Plan", "Plan")} {formatMoney(plannedCentsFor(state, category.id), state.currency)} · {t("real", "actual")} {formatMoney(usage?.spent ?? 0, state.currency)}
       </p>
     );
@@ -4702,7 +4702,7 @@ function ReviewEvidence({ state, item }: { state: AppState; item: AppState["revi
 
   if (rule) {
     return (
-      <p className="mt-2 text-sm text-slate-500">
+      <p className="mt-2 text-sm text-[var(--text-muted)]">
         {t("Próxima", "Next")} {rule.nextDate} · {formatMoney(rule.amountCents, rule.currency)}
       </p>
     );
@@ -4908,7 +4908,7 @@ function NetWorthView({ state, setState }: { state: AppState; setState: Dispatch
             />
           ))
         ) : (
-          <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-center text-sm text-slate-500">{t("Nada aquí todavía.", "Nothing here yet.")}</p>
+          <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-center text-sm text-[var(--text-muted)]">{t("Nada aquí todavía.", "Nothing here yet.")}</p>
         )}
       </div>
     </details>
@@ -4925,12 +4925,12 @@ function NetWorthView({ state, setState }: { state: AppState; setState: Dispatch
           <Metric label={t("Cambio", "Change")} value={previousClosing ? formatMoney(nominalChange, state.currency) : t("Sin cierre previo", "No prior close")} tone={nominalChange >= 0 ? "good" : "bad"} />
           <Metric label="%" value={previousClosing ? `${Math.round(percentChange * 100)}%` : t("N/D", "N/A")} tone={percentChange >= 0 ? "good" : "bad"} />
         </div>
-        {previousClosing && <p className="mt-4 text-sm text-slate-600">{t("vs. cierre", "vs. close")} {previousClosing.month}: {formatMoney(previousClosing.netWorthCents, state.currency)}</p>}
+        {previousClosing && <p className="mt-4 text-sm text-[var(--text-muted)]">{t("vs. cierre", "vs. close")} {previousClosing.month}: {formatMoney(previousClosing.netWorthCents, state.currency)}</p>}
       </Card>
 
       <Card>
         <h3 className="serif text-xl font-bold tracking-tight">{t("Actualizar snapshot", "Update snapshot")}</h3>
-        <p className="mt-1.5 text-sm text-slate-600">{t("Crea el snapshot en un toque desde tus cuentas y deudas.", "Build the snapshot in one tap from your accounts and debts.")}</p>
+        <p className="mt-1.5 text-sm text-[var(--text-muted)]">{t("Crea el snapshot en un toque desde tus cuentas y deudas.", "Build the snapshot in one tap from your accounts and debts.")}</p>
         <button className="mt-4 w-full rounded-2xl bg-[var(--lime)] px-5 py-3.5 text-sm font-bold" onClick={generateSnapshotFromAccounts} type="button">{t("Generar desde cuentas", "Generate from accounts")}</button>
         <details className="mt-3 rounded-2xl bg-[var(--surface-soft)] p-4">
           <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--primary)]">{t("o agregar manualmente", "or add manually")}</summary>
@@ -5150,13 +5150,13 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
       <Input label={t("Nombre", "Name")} value={draft.name} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} placeholder={t("Ej. Tarjeta de crédito", "e.g. Credit card")} />
       <Input label={t("Balance", "Balance")} value={draft.balance} onChange={(value) => setDraft((current) => ({ ...current, balance: value }))} placeholder="0.00" />
       <details className="rounded-2xl bg-white/55 p-3">
-        <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{t("Más opciones", "More options")}</summary>
+        <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
         <div className="mt-3 grid gap-4">
           <Input label={t("Tasa %", "Rate %")} value={draft.rate} onChange={(value) => setDraft((current) => ({ ...current, rate: value }))} placeholder="0" />
           <Input label={t("Pago mínimo", "Minimum payment")} value={draft.minimum} onChange={(value) => setDraft((current) => ({ ...current, minimum: value }))} placeholder="0.00" />
           <div className="grid gap-1">
             <Select label={t("Estrategia", "Strategy")} value={draft.strategy} options={["avalanche", "snowball", "manual"]} render={strategyShort} onChange={(value) => setDraft((current) => ({ ...current, strategy: value as DebtStrategy }))} />
-            <span className="text-xs text-slate-500">{debtStrategyLabel(draft.strategy)}</span>
+            <span className="text-xs text-[var(--text-muted)]">{debtStrategyLabel(draft.strategy)}</span>
           </div>
         </div>
       </details>
@@ -5256,7 +5256,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
                     <strong>{formatMoney(transaction.amountCents, transaction.baseCurrency)}</strong>
                   </div>
                 ))}
-                {!state.transactions.some((transaction) => transaction.tags.includes(`debt:${editingDebt.id}`)) && <p className="text-sm text-slate-600">{t("Todavía no hay pagos registrados desde esta vista.", "No payments recorded from this view yet.")}</p>}
+                {!state.transactions.some((transaction) => transaction.tags.includes(`debt:${editingDebt.id}`)) && <p className="text-sm text-[var(--text-muted)]">{t("Todavía no hay pagos registrados desde esta vista.", "No payments recorded from this view yet.")}</p>}
               </div>
             </div>
           </div>
@@ -5283,7 +5283,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
             <input className="field" type="date" value={paymentDraft.date} onChange={(event) => setPaymentDraft((current) => ({ ...current, date: event.target.value }))} />
           </label>
           <details className="rounded-2xl bg-white/55 p-3">
-            <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{t("Más opciones", "More options")}</summary>
+            <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
             <div className="mt-3">
               <Input label={t("Nota", "Note")} value={paymentDraft.note} onChange={(value) => setPaymentDraft((current) => ({ ...current, note: value }))} placeholder={t("Detalle del pago", "Payment detail")} />
             </div>
@@ -5508,15 +5508,15 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
             return (
               <Card key={goal.id} className="!p-4 sm:!p-5">
                 <div className="flex items-center gap-4">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-slate-600">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--text-muted)]">
                     <Target className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="serif truncate text-lg font-bold leading-tight">{goal.name}</h3>
-                      {hasPriority && <span className="rounded-full bg-[var(--surface-soft)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{priorityLabel(goal.priority ?? "medium")}</span>}
+                      {hasPriority && <span className="rounded-full bg-[var(--surface-soft)] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--text-muted)]">{priorityLabel(goal.priority ?? "medium")}</span>}
                     </div>
-                    <button className="mt-1 text-xs font-semibold text-slate-500 transition hover:text-[var(--primary)]" onClick={() => setHistoryGoalId(goal.id)} type="button">
+                    <button className="mt-1 text-xs font-semibold text-[var(--text-muted)] transition hover:text-[var(--primary)]" onClick={() => setHistoryGoalId(goal.id)} type="button">
                       {count > 0 ? t(`${count} aportes`, `${count} contributions`) : t("Sin aportes", "No contributions")}
                     </button>
                   </div>
@@ -5531,7 +5531,7 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
                 </div>
                 <Progress className="mt-3" value={goal.targetCents > 0 ? goal.savedCents / goal.targetCents : 0} />
                 <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-sm text-slate-600">{formatMoney(goal.savedCents, state.currency)} {t("de", "of")} {formatMoney(goal.targetCents, state.currency)}</p>
+                  <p className="text-sm text-[var(--text-muted)]">{formatMoney(goal.savedCents, state.currency)} {t("de", "of")} {formatMoney(goal.targetCents, state.currency)}</p>
                   <button
                     className="shrink-0 rounded-full bg-[var(--lime)] px-5 py-2 text-sm font-bold text-black shadow-sm transition hover:brightness-95"
                     onClick={() => openMove(goal.id, "contribute", (suggestedMonthlyContribution(goal) / 100).toString())}
@@ -5582,7 +5582,7 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
         title={moveGoal ? `${moveMode === "withdraw" ? t("Retirar de", "Withdraw from") : t("Aportar a", "Add to")} ${moveGoal.name}` : t("Mover dinero", "Move money")}
         footer={
           <>
-            <button className="rounded-2xl border border-[var(--line)] bg-white px-4 py-2.5 text-sm font-bold text-slate-600" onClick={() => setMoveGoalId(null)} type="button">{t("Cancelar", "Cancel")}</button>
+            <button className="rounded-2xl border border-[var(--line)] bg-white px-4 py-2.5 text-sm font-bold text-[var(--text-muted)]" onClick={() => setMoveGoalId(null)} type="button">{t("Cancelar", "Cancel")}</button>
             <button className={`rounded-2xl px-5 py-2.5 text-sm font-bold ${moveMode === "withdraw" ? "border border-[var(--line)] bg-white text-[var(--primary)]" : "bg-[var(--lime)] text-black"}`} form="goal-move-form" type="submit">{moveMode === "withdraw" ? t("Retirar", "Withdraw") : t("Aportar", "Add")}</button>
           </>
         }
@@ -5590,8 +5590,8 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
         {moveGoal && (
           <form className="grid gap-4" id="goal-move-form" onSubmit={submitMove}>
             <div className="flex gap-1 self-start rounded-full bg-[var(--surface-soft)] p-1 text-xs font-bold">
-              <button className={`rounded-full px-4 py-1.5 transition ${moveMode === "contribute" ? "bg-[var(--lime)] text-black shadow-sm" : "text-slate-600"}`} onClick={() => setMoveMode("contribute")} type="button">{t("Aportar", "Add")}</button>
-              <button className={`rounded-full px-4 py-1.5 transition ${moveMode === "withdraw" ? "bg-[var(--lime)] text-black shadow-sm" : "text-slate-600"}`} onClick={() => setMoveMode("withdraw")} type="button">{t("Retirar", "Withdraw")}</button>
+              <button className={`rounded-full px-4 py-1.5 transition ${moveMode === "contribute" ? "bg-[var(--lime)] text-black shadow-sm" : "text-[var(--text-muted)]"}`} onClick={() => setMoveMode("contribute")} type="button">{t("Aportar", "Add")}</button>
+              <button className={`rounded-full px-4 py-1.5 transition ${moveMode === "withdraw" ? "bg-[var(--lime)] text-black shadow-sm" : "text-[var(--text-muted)]"}`} onClick={() => setMoveMode("withdraw")} type="button">{t("Retirar", "Withdraw")}</button>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Input label={t("Monto", "Amount")} value={moveDraft.amount} onChange={(value) => setMoveDraft((current) => ({ ...current, amount: value }))} placeholder="0.00" />
@@ -5602,7 +5602,7 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
             </div>
             <Select label={moveMode === "withdraw" ? t("Cuenta destino", "Destination account") : t("Cuenta", "Account")} value={moveDraft.accountId} options={activeAccounts.map((account) => account.id)} render={(id) => accountName(id)} onChange={(value) => setMoveDraft((current) => ({ ...current, accountId: value }))} />
             <details className="rounded-2xl bg-white/55 p-3">
-              <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{t("Más opciones", "More options")}</summary>
+              <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
               <div className="mt-3">
                 <Input label={t("Nota", "Note")} value={moveDraft.note} onChange={(value) => setMoveDraft((current) => ({ ...current, note: value }))} placeholder={t("Detalle del movimiento", "Transaction detail")} />
               </div>
@@ -5628,13 +5628,13 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
               <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-sm" key={transaction.id}>
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{transaction.description}</p>
-                  <p className="text-xs text-slate-500">{transaction.date}</p>
+                  <p className="text-xs text-[var(--text-muted)]">{transaction.date}</p>
                 </div>
                 <strong className="serif shrink-0 text-base">{formatMoney(transaction.amountCents, transaction.baseCurrency)}</strong>
               </div>
             ))}
             {goalTransactions(historyGoal.id).length === 0 && (
-              <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-slate-600">{t("Todavía no hay movimientos registrados.", "No transactions recorded yet.")}</p>
+              <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-[var(--text-muted)]">{t("Todavía no hay movimientos registrados.", "No transactions recorded yet.")}</p>
             )}
           </div>
         )}
@@ -5910,7 +5910,7 @@ function ReportsView({
           ["closings", t("Cierres", "Closings")],
         ].map(([value, label]) => (
           <button
-            className={`rounded-full px-4 py-3 text-sm font-semibold ${reportMode === value ? "bg-[var(--lime)] text-black" : "text-slate-600"}`}
+            className={`rounded-full px-4 py-3 text-sm font-semibold ${reportMode === value ? "bg-[var(--lime)] text-black" : "text-[var(--text-muted)]"}`}
             key={value}
             onClick={() => setReportMode(value as "month" | "analysis" | "year" | "closings")}
             type="button"
@@ -5953,7 +5953,7 @@ function ReportsView({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h3 className="serif text-xl font-bold">{t("Cierre mensual guiado", "Guided month-end close")}</h3>
-              <p className="mt-1 text-sm text-slate-600">{t("Marca cada paso y cierra el mes.", "Check each step, then close the month.")}</p>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">{t("Marca cada paso y cierra el mes.", "Check each step, then close the month.")}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <button className="rounded-full border border-[var(--line)] bg-white px-5 py-3 text-sm font-bold" onClick={prepareNextMonth} type="button">
@@ -6028,7 +6028,7 @@ function ReportsView({
           </div>
 
           <details className="group mt-4">
-            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-bold text-slate-700">
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-bold text-[var(--foreground)]">
               <ChevronRight className="h-4 w-4 transition group-open:rotate-90" />
               {t("Más opciones", "More options")}
             </summary>
@@ -6069,7 +6069,7 @@ function ReportsView({
                   />
                   <span>
                     <span className="block font-bold">{t(`Preparar ${nextMonth} al cerrar`, `Prepare ${nextMonth} on close`)}</span>
-                    <span className="mt-1 block text-slate-600">{t("Copia el plan al mes siguiente.", "Copies the plan to next month.")}</span>
+                    <span className="mt-1 block text-[var(--text-muted)]">{t("Copia el plan al mes siguiente.", "Copies the plan to next month.")}</span>
                   </span>
                 </label>
 
@@ -6085,7 +6085,7 @@ function ReportsView({
                       ))}
                     </div>
                     {suggestedAdjustments.length > 4 && (
-                      <p className="mt-3 text-xs font-semibold text-slate-500">{t(`+${suggestedAdjustments.length - 4} más`, `+${suggestedAdjustments.length - 4} more`)}</p>
+                      <p className="mt-3 text-xs font-semibold text-[var(--text-muted)]">{t(`+${suggestedAdjustments.length - 4} más`, `+${suggestedAdjustments.length - 4} more`)}</p>
                     )}
                   </div>
                 )}
@@ -6123,7 +6123,7 @@ function ReportsView({
             )}
           >
             {state.accounts.length === 0 ? (
-              <p className="text-sm text-slate-600">{t("No hay cuentas para confirmar.", "No accounts to confirm.")}</p>
+              <p className="text-sm text-[var(--text-muted)]">{t("No hay cuentas para confirmar.", "No accounts to confirm.")}</p>
             ) : (
               <div className="space-y-2">
                 {state.accounts.map((account) => {
@@ -6159,12 +6159,12 @@ function ReportsView({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h3 className="serif text-xl font-bold">{t("Explorador del mes", "Month explorer")}</h3>
-              <p className="mt-1 text-sm text-slate-600">{t("Analiza por categoría, cuenta, comercio, etiqueta o tipo.", "Break down by category, account, merchant, tag, or type.")}</p>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">{t("Analiza por categoría, cuenta, comercio, etiqueta o tipo.", "Break down by category, account, merchant, tag, or type.")}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(reportFacetLabels) as ReportBreakdownFacet[]).map((facet) => (
                 <button
-                  className={`rounded-full px-4 py-2 text-xs font-bold ${reportFacet === facet ? "bg-[var(--lime)] text-black" : "border border-[var(--line)] bg-white text-slate-600"}`}
+                  className={`rounded-full px-4 py-2 text-xs font-bold ${reportFacet === facet ? "bg-[var(--lime)] text-black" : "border border-[var(--line)] bg-white text-[var(--text-muted)]"}`}
                   key={facet}
                   onClick={() => setReportFacet(facet)}
                   type="button"
@@ -6184,7 +6184,7 @@ function ReportsView({
 
           <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--line)] bg-white/55">
             {reportRows.length === 0 && (
-              <p className="p-6 text-sm text-slate-600">{t("No hay movimientos aprobados para este reporte. Registra o aprueba movimientos del mes para ver analisis.", "No approved transactions for this report. Record or approve transactions this month to see analysis.")}</p>
+              <p className="p-6 text-sm text-[var(--text-muted)]">{t("No hay movimientos aprobados para este reporte. Registra o aprueba movimientos del mes para ver analisis.", "No approved transactions for this report. Record or approve transactions this month to see analysis.")}</p>
             )}
             {reportRows.map((row) => {
               const ratio = reportTotal > 0 ? Math.min(Math.abs(row.amountCents) / reportTotal, 1) : 0;
@@ -6193,7 +6193,7 @@ function ReportsView({
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-bold">{row.label}</p>
-                      <p className="mt-1 text-sm text-slate-600">
+                      <p className="mt-1 text-sm text-[var(--text-muted)]">
                         {row.count} {t("mov.", "txns")} {row.subtitle ? `· ${row.subtitle}` : ""}
                         {row.plannedCents !== undefined ? ` · ${t("Plan", "Plan")} ${formatMoney(row.plannedCents, state.currency)}` : ""}
                       </p>
@@ -6215,18 +6215,18 @@ function ReportsView({
           <div className="flex items-center justify-between gap-3">
             <h3 className="serif text-xl font-bold">{t("Lectura anual", "Annual overview")}</h3>
             <div className="flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-white/70 px-1 py-1">
-              <button type="button" aria-label={t("Año anterior", "Previous year")} onClick={() => setSelectedYear(String(Number(year) - 1))} className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white">
+              <button type="button" aria-label={t("Año anterior", "Previous year")} onClick={() => setSelectedYear(String(Number(year) - 1))} className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white">
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <span className="px-2 text-sm font-bold text-[var(--primary)]">{year}</span>
-              <button type="button" aria-label={t("Año siguiente", "Next year")} onClick={() => setSelectedYear(String(Number(year) + 1))} className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white">
+              <button type="button" aria-label={t("Año siguiente", "Next year")} onClick={() => setSelectedYear(String(Number(year) + 1))} className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white">
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
           </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="text-xs uppercase tracking-[0.16em] text-slate-500">
+              <thead className="text-xs uppercase tracking-[0.16em] text-[var(--text-muted)]">
                 <tr>
                   <th className="py-3">{t("Mes", "Month")}</th>
                   <th>{t("Ingresos", "Income")}</th>
@@ -6263,7 +6263,7 @@ function ReportsView({
                 <div>
                   <p className="kicker">{t(`Cerrado el ${closing.closedAt}`, `Closed on ${closing.closedAt}`)}</p>
                   <h3 className="serif mt-1 text-3xl font-bold">{closing.month}</h3>
-                  <p className="mt-2 text-sm text-slate-600">{closing.notes}</p>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">{closing.notes}</p>
                 </div>
                 <span className={`serif text-3xl font-bold ${closing.remainderCents < 0 ? "text-[var(--danger)]" : "text-[var(--primary)]"}`}>{formatMoney(closing.remainderCents, state.currency)}</span>
               </div>
@@ -6277,20 +6277,20 @@ function ReportsView({
                 <div className="mt-5 grid gap-3 lg:grid-cols-3">
                   <div className="rounded-2xl bg-white/65 p-4 text-sm">
                     <p className="font-bold">{t("Pendientes al cerrar", "Pending at close")}</p>
-                    <p className="mt-1 text-slate-600">{t(`${closing.pendingReviewCount ?? 0} revision(es) · ${closing.pendingReceiptCount ?? 0} recibo(s)`, `${closing.pendingReviewCount ?? 0} review(s) · ${closing.pendingReceiptCount ?? 0} receipt(s)`)}</p>
+                    <p className="mt-1 text-[var(--text-muted)]">{t(`${closing.pendingReviewCount ?? 0} revision(es) · ${closing.pendingReceiptCount ?? 0} recibo(s)`, `${closing.pendingReviewCount ?? 0} review(s) · ${closing.pendingReceiptCount ?? 0} receipt(s)`)}</p>
                   </div>
                   <div className="rounded-2xl bg-white/65 p-4 text-sm">
                     <p className="font-bold">{t("Excedidos", "Over budget")}</p>
-                    <p className="mt-1 text-slate-600">{closing.exceededCategories?.length ? closing.exceededCategories.map((item) => item.name).join(", ") : t("Ninguno", "None")}</p>
+                    <p className="mt-1 text-[var(--text-muted)]">{closing.exceededCategories?.length ? closing.exceededCategories.map((item) => item.name).join(", ") : t("Ninguno", "None")}</p>
                   </div>
                   <div className="rounded-2xl bg-white/65 p-4 text-sm">
                     <p className="font-bold">{t("Siguiente mes", "Next month")}</p>
-                    <p className="mt-1 text-slate-600">{closing.nextMonthPrepared ? t("Preparado automaticamente", "Prepared automatically") : t("No preparado desde el cierre", "Not prepared from this close")}</p>
+                    <p className="mt-1 text-[var(--text-muted)]">{closing.nextMonthPrepared ? t("Preparado automaticamente", "Prepared automatically") : t("No preparado desde el cierre", "Not prepared from this close")}</p>
                   </div>
                 </div>
               )}
               {closing.learning && (
-                <p className="mt-4 rounded-2xl bg-white/65 p-4 text-sm text-slate-700">{closing.learning}</p>
+                <p className="mt-4 rounded-2xl bg-white/65 p-4 text-sm text-[var(--foreground)]">{closing.learning}</p>
               )}
             </Card>
           ))}
@@ -6454,7 +6454,7 @@ function FamilyView({ state, setState }: { state: AppState; setState: Dispatch<S
         title={memberModal?.mode === "edit" ? t("Editar miembro", "Edit member") : t("Invitar miembro", "Invite member")}
         footer={
           <>
-            <button className="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-slate-700" onClick={() => setMemberModal(null)} type="button">{t("Cancelar", "Cancel")}</button>
+            <button className="rounded-2xl bg-white px-5 py-3 text-sm font-bold text-[var(--foreground)]" onClick={() => setMemberModal(null)} type="button">{t("Cancelar", "Cancel")}</button>
             <button className="rounded-2xl bg-[var(--lime)] px-5 py-3 text-sm font-bold disabled:opacity-40" onClick={saveMember} type="button" disabled={!memberDraft.name.trim()}>
               {memberModal?.mode === "edit" ? t("Guardar", "Save") : t("Agregar", "Add")}
             </button>
@@ -6466,13 +6466,13 @@ function FamilyView({ state, setState }: { state: AppState; setState: Dispatch<S
             <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--lime)] font-bold">
               {(memberDraft.avatar.trim().slice(0, 3).toUpperCase() || (memberDraft.name.trim() ? initialsForName(memberDraft.name.trim()) : "··"))}
             </span>
-            <p className="text-sm text-slate-600">{t("Iniciales automáticas del nombre.", "Initials are generated from the name.")}</p>
+            <p className="text-sm text-[var(--text-muted)]">{t("Iniciales automáticas del nombre.", "Initials are generated from the name.")}</p>
           </div>
           <Input label={t("Nombre", "Name")} value={memberDraft.name} onChange={(value) => setMemberDraft((current) => ({ ...current, name: value }))} placeholder={t("Nombre del miembro", "Member's name")} />
           <Input label={t("Email", "Email")} value={memberDraft.email} onChange={(value) => setMemberDraft((current) => ({ ...current, email: value }))} placeholder="persona@email.com" />
           <Select label={t("Rol", "Role")} value={memberDraft.role} options={["owner", "editor", "viewer"]} render={roleLabel} onChange={(value) => setMemberDraft((current) => ({ ...current, role: value as typeof memberDraft.role }))} />
           <details className="rounded-2xl bg-[var(--surface-soft)] p-3">
-            <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{t("Más opciones", "More options")}</summary>
+            <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
             <div className="mt-3">
               <Input label={t("Iniciales", "Initials")} value={memberDraft.avatar} onChange={(value) => setMemberDraft((current) => ({ ...current, avatar: value }))} placeholder={t("Se generan del nombre", "Generated from the name")} />
             </div>
@@ -6756,7 +6756,7 @@ function CloudAccountSection() {
       <MembersPanel />
       <Card>
         <h3 className="serif text-2xl font-bold text-[var(--danger)]">{t("Zona de peligro", "Danger zone")}</h3>
-        <p className="mt-2 text-sm text-slate-600">{t("Borra tu cuenta y todos tus datos (cuentas, movimientos, deudas, metas) de la nube de forma permanente. Tendrás que registrarte de nuevo para volver a usar la app.", "Permanently delete your account and all your data (accounts, transactions, debts, goals) from the cloud. You'll need to sign up again to use the app.")}</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Borra tu cuenta y todos tus datos (cuentas, movimientos, deudas, metas) de la nube de forma permanente. Tendrás que registrarte de nuevo para volver a usar la app.", "Permanently delete your account and all your data (accounts, transactions, debts, goals) from the cloud. You'll need to sign up again to use the app.")}</p>
         {error && <p className="mt-3 text-sm font-semibold text-[var(--danger)]">{error}</p>}
         <button
           className="mt-4 rounded-2xl border border-[var(--danger)] bg-red-50 px-5 py-3 text-sm font-bold text-[var(--danger)] transition hover:bg-red-100 disabled:opacity-50"
@@ -6857,12 +6857,12 @@ function AccountView({ state, setState, authed = false }: { state: AppState; set
       ) : (
         <Card className="mb-5">
           <h3 className="serif text-xl font-bold">{t("Crear o iniciar sesión", "Create account or sign in")}</h3>
-          <p className="mt-2 text-sm text-slate-600">{t("Tu sesión se guarda en este dispositivo.", "Your session is saved on this device.")}</p>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Tu sesión se guarda en este dispositivo.", "Your session is saved on this device.")}</p>
           <form className="mt-5 grid gap-3" onSubmit={signIn}>
             <Input label={t("Nombre", "Name")} value={draft.name} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} placeholder={t("Nombre", "Name")} />
             <Input label={t("Email", "Email")} value={draft.email} onChange={(value) => setDraft((current) => ({ ...current, email: value }))} placeholder="tu@email.com" />
             <details className="rounded-2xl bg-[var(--surface-soft)] p-3">
-              <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{t("Ajustar preferencias", "Adjust preferences")}</summary>
+              <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Ajustar preferencias", "Adjust preferences")}</summary>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <Input label={t("Idioma", "Language")} value={draft.locale} onChange={(value) => setDraft((current) => ({ ...current, locale: value }))} placeholder="es-DO" />
                 <Input label={t("Zona horaria", "Time zone")} value={draft.timezone} onChange={(value) => setDraft((current) => ({ ...current, timezone: value }))} placeholder="America/Santo_Domingo" />
@@ -7174,7 +7174,7 @@ function SettingsView({
       {/* Modo financiero — foundational choice, its own labeled block */}
       <Card>
         <h3 className="serif text-xl font-bold">{t("Modo financiero", "Financial mode")}</h3>
-        <p className="mt-2 text-sm text-slate-600">{t("Cómo prefieres llevar tus finanzas. Lo eliges una vez.", "How you prefer to manage your money. You choose this once.")}</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Cómo prefieres llevar tus finanzas. Lo eliges una vez.", "How you prefer to manage your money. You choose this once.")}</p>
         <div className="mt-5">
           <Select label={t("Modo", "Mode")} value={state.mode} options={["tracker", "monthly-plan", "zero"]} render={(value) => t(modeLabels[value as Mode], { tracker: "Tracking", "monthly-plan": "Monthly plan", zero: "Envelopes / zero-based" }[value as Mode])} onChange={(value) => setState((current) => ({ ...current, mode: value as Mode }))} />
         </div>
@@ -7183,10 +7183,10 @@ function SettingsView({
       {/* Moneda base — secondary data config, separated from the mode */}
       <Card>
         <h3 className="serif text-xl font-bold">{t("Moneda base", "Base currency")}</h3>
-        <p className="mt-2 text-sm text-slate-600">{t("La moneda de tu hogar para totales y reportes. Cada cuenta conserva su propia moneda.", "Your household's home currency for totals and reports. Each account keeps its own currency.")}</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">{t("La moneda de tu hogar para totales y reportes. Cada cuenta conserva su propia moneda.", "Your household's home currency for totals and reports. Each account keeps its own currency.")}</p>
         <div className="mt-5">
           <Select label={t("Moneda", "Currency")} value={state.currency} options={supportedCurrencies} render={currencyLabel} onChange={(value) => requestCurrencyChange(value as CurrencyCode)} />
-          {currencyBusy && <p className="mt-2 text-xs text-slate-500">{t("Buscando la tasa de cambio…", "Fetching the exchange rate…")}</p>}
+          {currencyBusy && <p className="mt-2 text-xs text-[var(--text-muted)]">{t("Buscando la tasa de cambio…", "Fetching the exchange rate…")}</p>}
         </div>
       </Card>
 
@@ -7195,7 +7195,7 @@ function SettingsView({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="serif text-xl font-bold">{t("Categorias del hogar", "Household categories")}</h3>
-            <p className="mt-1 text-sm text-slate-600">{t("Toca una para editarla.", "Tap one to edit it.")}</p>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">{t("Toca una para editarla.", "Tap one to edit it.")}</p>
           </div>
           <button className="flex shrink-0 items-center gap-2 rounded-2xl bg-[var(--lime)] px-5 py-3 text-sm font-bold" onClick={openNewCategory} type="button">
             <Plus className="h-4 w-4" />
@@ -7241,7 +7241,7 @@ function SettingsView({
             <Bot className="h-5 w-5 text-[var(--primary)]" />
             <div>
               <h3 className="font-semibold">{t("IA opcional", "Optional AI")}</h3>
-              <p className="text-sm text-slate-600">{t("Sugiere categorías y detecta desviaciones.", "Suggests categories and flags deviations.")}</p>
+              <p className="text-sm text-[var(--text-muted)]">{t("Sugiere categorías y detecta desviaciones.", "Suggests categories and flags deviations.")}</p>
             </div>
           </div>
           <span className="rounded-full bg-white px-4 py-2 text-xs font-bold">{t(`${state.subscription.aiCreditsUsed}/${state.subscription.aiCreditsLimit} creditos`, `${state.subscription.aiCreditsUsed}/${state.subscription.aiCreditsLimit} credits`)}</span>
@@ -7282,7 +7282,7 @@ function SettingsView({
           </div>
         </details>
         {!canUseAi && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(80,102,0,0.18)] bg-[rgba(204,255,0,0.08)] px-4 py-3 text-sm text-slate-700">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[rgba(80,102,0,0.18)] bg-[rgba(204,255,0,0.08)] px-4 py-3 text-sm text-[var(--foreground)]">
             <span>{t("La lectura con IA es parte de RindoMes Pro. La captura manual y las reglas locales (gratis) siempre están disponibles.", "AI reading is part of RindoMes Pro. Manual capture and local rules (free) are always available.")}</span>
             <button className="shrink-0 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-black" onClick={onOpenPaywall} type="button">
               {t("Activar Pro", "Upgrade to Pro")}
@@ -7317,7 +7317,7 @@ function SettingsView({
           <summary className="flex cursor-pointer select-none items-center justify-between gap-3 list-none">
             <div>
               <h3 className="serif text-xl font-bold">{t("Apodos de comercio", "Merchant nicknames")}</h3>
-              <p className="mt-2 text-sm text-slate-600">{t("Muestra un nombre corto en lugar del nombre largo del recibo o del banco.", "Show a short name instead of the long one from the receipt or bank.")}</p>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Muestra un nombre corto en lugar del nombre largo del recibo o del banco.", "Show a short name instead of the long one from the receipt or bank.")}</p>
             </div>
             <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-[var(--primary)]">
               {state.merchantAliases?.length ? t(`${state.merchantAliases.length} apodo(s)`, `${state.merchantAliases.length} nickname(s)`) : t("Ninguno", "None")}
@@ -7346,7 +7346,7 @@ function SettingsView({
                 ))}
               </div>
             ) : (
-              <p className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-4 text-sm text-slate-600">
+              <p className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-4 text-sm text-[var(--text-muted)]">
                 {t("Aún no tienes apodos. Añade uno para que los movimientos muestren un nombre limpio.", "You don't have any nicknames yet. Add one so transactions show a clean name.")}
               </p>
             )}
@@ -7358,12 +7358,12 @@ function SettingsView({
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="font-semibold">{t("Sincronización en la nube", "Cloud sync")}</h3>
-          <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold ${convexConfigured ? "bg-[rgba(204,255,0,0.18)] text-[var(--primary)]" : "bg-white text-slate-500"}`}>
+          <span className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold ${convexConfigured ? "bg-[rgba(204,255,0,0.18)] text-[var(--primary)]" : "bg-white text-[var(--text-muted)]"}`}>
             <span className={`h-2 w-2 rounded-full ${convexConfigured ? "bg-[var(--primary)]" : "bg-slate-400"}`} />
             {convexConfigured ? t("Sync activo", "Sync on") : t("Modo local", "Local mode")}
           </span>
         </div>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-[var(--text-muted)]">
           {convexConfigured
             ? t("Tus cambios se guardan solos y aparecen en todos tus dispositivos al iniciar sesión.", "Your changes save automatically and appear on all your devices when you sign in.")
             : t("Por ahora los cambios se guardan solo en este navegador.", "For now, changes are saved only in this browser.")}
@@ -7373,7 +7373,7 @@ function SettingsView({
       {/* Privacidad y datos — safe export prominent; one destructive action with confirm */}
       <Card>
         <h3 className="serif text-xl font-bold">{t("Privacidad y datos", "Privacy & data")}</h3>
-        <p className="mt-2 text-sm text-slate-600">{t("Descarga o elimina tus datos en cualquier momento.", "Download or delete your data anytime.")}</p>
+        <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Descarga o elimina tus datos en cualquier momento.", "Download or delete your data anytime.")}</p>
         <div className="mt-5 flex flex-wrap gap-3">
           <button className="flex items-center gap-2 rounded-2xl bg-[var(--lime)] px-5 py-3 text-sm font-bold" onClick={exportPrivacyJson} type="button">
             <Download className="h-4 w-4" />
@@ -7412,8 +7412,8 @@ function SettingsView({
           </details>
           {editingCategory && mergeTargets.length > 0 && (
             <div className="rounded-2xl border border-[var(--line)] bg-white/45 p-4">
-              <p className="text-sm font-bold text-slate-800">{t("Fusionar con otra", "Merge into another")}</p>
-              <p className="mt-1 text-xs text-slate-600">{t("Mueve sus movimientos y plan a otra categoría del mismo grupo.", "Move its transactions and plan into another category of the same group.")}</p>
+              <p className="text-sm font-bold text-[var(--foreground)]">{t("Fusionar con otra", "Merge into another")}</p>
+              <p className="mt-1 text-xs text-[var(--text-muted)]">{t("Mueve sus movimientos y plan a otra categoría del mismo grupo.", "Move its transactions and plan into another category of the same group.")}</p>
               <form className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" onSubmit={(event) => { mergeCategory(event); setEditingCategoryId(null); }}>
                 <Select label={t("Fusionar hacia", "Merge into")} value={mergeDraft.toCategoryId} options={["", ...mergeTargets.map((category) => category.id)]} render={(id) => categoryById(state.categories, id)?.name ?? t("Elegir destino", "Choose destination")} onChange={(value) => setMergeDraft({ fromCategoryId: editingCategory.id, toCategoryId: value })} />
                 <button className="rounded-2xl border border-[var(--line)] bg-white px-5 py-3 text-sm font-bold text-[var(--primary)] disabled:opacity-50" disabled={!mergeDraft.toCategoryId} type="submit">{t("Fusionar", "Merge")}</button>
@@ -7488,7 +7488,7 @@ function SettingsView({
         }
       >
         {currencyChange && (
-          <div className="grid gap-4 text-sm text-slate-700">
+          <div className="grid gap-4 text-sm text-[var(--foreground)]">
             <p>
               {t(
                 `Cambiarás la moneda de tu hogar de ${currencyLabel(state.currency)} a ${currencyLabel(currencyChange.to)}.`,
@@ -7496,9 +7496,9 @@ function SettingsView({
               )}
             </p>
             <div className="rounded-2xl bg-white/70 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">{t("Tasa de cambio", "Exchange rate")}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{t("Tasa de cambio", "Exchange rate")}</p>
               <p className="serif mt-1 text-lg font-bold">{`1 ${state.currency} = ${Number(currencyChange.rate.toPrecision(4))} ${currencyChange.to}`}</p>
-              <p className="mt-1 text-xs text-slate-500">
+              <p className="mt-1 text-xs text-[var(--text-muted)]">
                 {currencyChange.source === "api"
                   ? t(`Tasa de mercado del ${currencyChange.date}.`, `Market rate as of ${currencyChange.date}.`)
                   : t("Tasa de referencia (sin conexión). Puedes ajustar montos luego si hace falta.", "Reference rate (offline). You can adjust amounts later if needed.")}
@@ -7766,7 +7766,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
         <div className="grid place-items-center rounded-3xl border border-dashed border-[var(--line)] bg-white/45 p-10 text-center">
           <FileSpreadsheet className="h-12 w-12 text-[var(--primary)]" />
           <h3 className="serif mt-4 text-3xl font-bold">{t("Importar presupuesto Excel", "Import Excel budget")}</h3>
-          <p className="mt-2 max-w-lg text-sm text-slate-600">{message}</p>
+          <p className="mt-2 max-w-lg text-sm text-[var(--text-muted)]">{message}</p>
           <label className="mt-6 inline-flex cursor-pointer items-center rounded-full bg-[var(--lime)] px-6 py-3 font-semibold">
             <Download className="mr-2 inline h-4 w-4" />
             {status === "loading" ? t("Leyendo...", "Reading...") : t("Seleccionar archivo", "Choose file")}
@@ -7789,7 +7789,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
             <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
               <div>
                 <h3 className="serif text-xl font-bold">{t("Vista previa de importacion", "Import preview")}</h3>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-[var(--text-muted)]">
                   {t(`Plan total ${formatMoney(preview.summary.plannedCents, state.currency)} · ingresos reales ${formatMoney(preview.summary.incomeCents, state.currency)} · egresos reales ${formatMoney(preview.summary.outflowCents, state.currency)}`, `Total plan ${formatMoney(preview.summary.plannedCents, state.currency)} · real income ${formatMoney(preview.summary.incomeCents, state.currency)} · real spending ${formatMoney(preview.summary.outflowCents, state.currency)}`)}
                 </p>
                 {preview.summary.warnings.map((warning) => (
@@ -7818,7 +7818,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
         <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
           <div>
             <h3 className="serif text-xl font-bold">{t("Pegar CSV o texto tabular", "Paste CSV or tabular text")}</h3>
-            <p className="mt-2 text-sm text-slate-600">{t("Acepta encabezados como fecha, descripcion, monto, categoria, cuenta, comercio, tags, tipo y moneda. Si falta categoria o cuenta exacta, el movimiento entra a revision.", "Accepts headers like date, description, amount, category, account, merchant, tags, type, and currency. If an exact category or account is missing, the transaction goes to review.")}</p>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Acepta encabezados como fecha, descripcion, monto, categoria, cuenta, comercio, tags, tipo y moneda. Si falta categoria o cuenta exacta, el movimiento entra a revision.", "Accepts headers like date, description, amount, category, account, merchant, tags, type, and currency. If an exact category or account is missing, the transaction goes to review.")}</p>
             <textarea
               className="field mt-4 min-h-44 font-mono text-sm"
               onChange={(event) => setPasteText(event.target.value)}
@@ -7831,7 +7831,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
           </div>
           <div className="rounded-2xl border border-[var(--line)] bg-white/55 p-4">
             <p className="kicker">{t("Resumen texto", "Text summary")}</p>
-            {!textPreview && <p className="mt-3 text-sm text-slate-600">{t("Pega movimientos desde banco, notas o una tabla simple para ver la vista previa antes de tocar datos reales.", "Paste transactions from your bank, notes, or a simple table to preview before touching real data.")}</p>}
+            {!textPreview && <p className="mt-3 text-sm text-[var(--text-muted)]">{t("Pega movimientos desde banco, notas o una tabla simple para ver la vista previa antes de tocar datos reales.", "Paste transactions from your bank, notes, or a simple table to preview before touching real data.")}</p>}
             {textPreview && (
               <div className="mt-4 grid gap-3">
                 <Metric label={t("Movimientos", "Transactions")} value={String(textPreview.transactions.length)} />
@@ -7852,7 +7852,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
                 <div className="grid gap-2 border-b border-[var(--line)] p-4 last:border-b-0 sm:grid-cols-[1fr_auto] sm:items-center" key={transaction.id}>
                   <div>
                     <p className="font-bold">{transaction.description}</p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-[var(--text-muted)]">
                       {transaction.date} · {categoryById(state.categories, transaction.categoryId)?.name ?? t("Sin categoría", "No category")} · {state.accounts.find((account) => account.id === transaction.accountId)?.name ?? t("Cuenta", "Account")} · {transactionStatusLabel(transaction.status)}
                     </p>
                   </div>
@@ -7922,7 +7922,7 @@ function Modal({
         <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-4 sm:px-6">
           <h2 className="serif text-xl font-bold tracking-tight sm:text-2xl">{title}</h2>
           <button
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-slate-700 shadow-sm transition hover:bg-white/80"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-white/80"
             onClick={onClose}
             type="button"
             aria-label={t("Cerrar", "Close")}
@@ -7965,7 +7965,7 @@ function RowMenu({ items }: { items: RowMenuItem[] }) {
   return (
     <div className="relative shrink-0">
       <button
-        className="grid h-9 w-9 place-items-center rounded-full text-slate-500 transition hover:bg-white/70 hover:text-slate-800"
+        className="grid h-9 w-9 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white/70 hover:text-[var(--foreground)]"
         onClick={(event) => {
           event.stopPropagation();
           setOpen((current) => !current);
@@ -7985,7 +7985,7 @@ function RowMenu({ items }: { items: RowMenuItem[] }) {
         >
           {items.map((item, index) => (
             <button
-              className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-white/70 ${item.danger ? "text-[var(--danger)]" : "text-slate-700"}`}
+              className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-white/70 ${item.danger ? "text-[var(--danger)]" : "text-[var(--foreground)]"}`}
               key={`${item.label}-${index}`}
               onClick={(event) => {
                 event.stopPropagation();
@@ -8050,13 +8050,13 @@ function CompactRow({
       tabIndex={interactive ? 0 : undefined}
     >
       {icon && (
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-slate-600">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--text-muted)]">
           {icon}
         </span>
       )}
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold leading-tight text-[var(--ink)]">{label}</p>
-        {sublabel && <p className="mt-0.5 truncate text-sm text-slate-600">{sublabel}</p>}
+        {sublabel && <p className="mt-0.5 truncate text-sm text-[var(--text-muted)]">{sublabel}</p>}
       </div>
       {value !== undefined && (
         <span className={`serif shrink-0 text-lg font-bold leading-tight ${valueClass}`}>{value}</span>
@@ -8064,7 +8064,7 @@ function CompactRow({
       {menu && menu.length > 0 ? (
         <RowMenu items={menu} />
       ) : interactive ? (
-        <ChevronRight className="h-5 w-5 shrink-0 text-slate-300 transition group-hover:text-slate-500" />
+        <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-subtle)] transition group-hover:text-[var(--text-muted)]" />
       ) : null}
     </div>
   );
@@ -8077,7 +8077,7 @@ function ViewShell({ title, eyebrow, description, action, children }: { title: s
         <div className="min-w-0">
           <p className="kicker">{eyebrow}</p>
           <h2 className="serif mt-1.5 text-[1.9rem] font-bold leading-[1.05] tracking-tight md:text-[2.4rem]">{title}</h2>
-          {description && <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">{description}</p>}
+          {description && <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--text-muted)]">{description}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -8101,7 +8101,7 @@ function EmptyState({ title, subtitle, children }: { title: string; subtitle: st
   return (
     <div className="rounded-2xl border border-[rgba(204,255,0,0.45)] bg-[rgba(204,255,0,0.06)] p-6 text-center">
       <p className="serif text-lg font-bold text-[var(--ink)]">{title}</p>
-      <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-slate-600">{subtitle}</p>
+      <p className="mx-auto mt-1.5 max-w-sm text-sm leading-relaxed text-[var(--text-muted)]">{subtitle}</p>
       {children && <div className="mt-4 flex flex-wrap justify-center gap-2">{children}</div>}
     </div>
   );
@@ -8134,7 +8134,7 @@ function RiskRow({ name, ratio, spent, planned, currency }: { name: string; rati
         <span className={danger ? "font-bold text-[var(--danger)]" : "font-semibold"}>{Math.round(ratio * 100)}%</span>
       </div>
       <Progress className="mt-2" value={ratio} danger={danger} />
-      <div className="mt-2 flex justify-between text-sm text-slate-600">
+      <div className="mt-2 flex justify-between text-sm text-[var(--text-muted)]">
         <span>{formatMoney(spent, currency)} {t("gastado", "spent")}</span>
         <span>{formatMoney(planned, currency)} {t("limite", "limit")}</span>
       </div>
@@ -8174,10 +8174,10 @@ function TransactionRow({ state, transaction }: { state: AppState; transaction: 
         </div>
         <div className="min-w-0">
           <p className="font-semibold">{transaction.description}</p>
-          <p className="truncate text-sm text-slate-600">{transaction.date} · {transfer ? t(`Transferencia a ${destination ?? "cuenta destino"}`, `Transfer to ${destination ?? "destination account"}`) : refund ? t(`Reembolso de ${linked?.description ?? category?.name ?? "gasto"}`, `Refund of ${linked?.description ?? category?.name ?? "expense"}`) : splitSummary || category?.name} · {transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : t("Sin comercio", "No merchant")}</p>
+          <p className="truncate text-sm text-[var(--text-muted)]">{transaction.date} · {transfer ? t(`Transferencia a ${destination ?? "cuenta destino"}`, `Transfer to ${destination ?? "destination account"}`) : refund ? t(`Reembolso de ${linked?.description ?? category?.name ?? "gasto"}`, `Refund of ${linked?.description ?? category?.name ?? "expense"}`) : splitSummary || category?.name} · {transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : t("Sin comercio", "No merchant")}</p>
           <details className="group mt-0.5">
-            <summary className="cursor-pointer select-none list-none text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400 transition hover:text-[var(--primary)]">{t("Detalles", "Details")}</summary>
-            <p className="mt-1 text-xs text-slate-500">
+            <summary className="cursor-pointer select-none list-none text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)] transition hover:text-[var(--primary)]">{t("Detalles", "Details")}</summary>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
               {t("Original", "Original")} {formatMoney(transaction.originalAmountCents, transaction.originalCurrency)} · {t("tasa", "rate")} {transaction.exchangeRate} ({transaction.exchangeRateSource}, {transaction.exchangeRateDate}) · {transactionStatusLabel(transaction.status)}
               {transaction.splits?.length ? ` · ${t(`${transaction.splits.length} splits`, `${transaction.splits.length} splits`)}` : ""}
             </p>
@@ -8195,7 +8195,7 @@ function ListCard({ title, subtitle, value, danger }: { title: string; subtitle:
       <div className="flex items-center justify-between gap-4">
         <div>
           <h3 className="font-semibold">{title}</h3>
-          <p className="text-sm text-slate-600">{subtitle}</p>
+          <p className="text-sm text-[var(--text-muted)]">{subtitle}</p>
         </div>
         <span className={`serif text-2xl font-bold ${danger ? "text-[var(--danger)]" : ""}`}>{value}</span>
       </div>
@@ -8217,14 +8217,14 @@ function CommentList({ comments, state }: { comments: FamilyComment[]; state?: A
           <div className="rounded-2xl border border-[var(--line)] bg-white/55 p-3 text-sm" key={comment.id}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-semibold">{comment.authorName}</span>
-              <span className="text-xs text-slate-500">{new Date(comment.createdAt).toLocaleString("es-DO")}</span>
+              <span className="text-xs text-[var(--text-muted)]">{new Date(comment.createdAt).toLocaleString("es-DO")}</span>
             </div>
-            <p className="mt-1 text-slate-700">{comment.body}</p>
-            {target && <p className="mt-2 text-xs font-semibold text-slate-500">{target}</p>}
+            <p className="mt-1 text-[var(--foreground)]">{comment.body}</p>
+            {target && <p className="mt-2 text-xs font-semibold text-[var(--text-muted)]">{target}</p>}
           </div>
         );
       })}
-      {!comments.length && <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-slate-600">{t("Sin comentarios todavía.", "No comments yet.")}</p>}
+      {!comments.length && <p className="rounded-2xl border border-dashed border-[var(--line)] p-4 text-sm text-[var(--text-muted)]">{t("Sin comentarios todavía.", "No comments yet.")}</p>}
     </div>
   );
 }
@@ -8259,7 +8259,7 @@ function AmountInput({ label, originalAmountCents, onCommit }: { label: string; 
           onCommit(toCents(event.target.value));
         }}
       />
-      <span className="text-xs font-normal text-slate-500">{t("Corrige el monto; el saldo de la cuenta y el real por categoría se recalculan solos.", "Fix the amount; the account balance and the real per-category total recalculate on their own.")}</span>
+      <span className="text-xs font-normal text-[var(--text-muted)]">{t("Corrige el monto; el saldo de la cuenta y el real por categoría se recalculan solos.", "Fix the amount; the account balance and the real per-category total recalculate on their own.")}</span>
     </label>
   );
 }

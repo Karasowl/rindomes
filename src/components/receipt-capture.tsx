@@ -258,10 +258,10 @@ export function ReceiptCaptureView({
       : { text: t("Modo local · lo capturarás a mano.", "Local mode · you'll enter it manually."), tone: "muted" as const };
     const noteClass =
       aiNote.tone === "ok"
-        ? "border-[rgba(80,102,0,0.22)] bg-[rgba(204,255,0,0.1)] text-slate-700"
+        ? "border-[rgba(80,102,0,0.22)] bg-[rgba(204,255,0,0.1)] text-[var(--foreground)]"
         : aiNote.tone === "info"
-          ? "border-[rgba(80,102,0,0.18)] bg-white/70 text-slate-600"
-          : "border-[var(--line)] bg-white/55 text-slate-500";
+          ? "border-[rgba(80,102,0,0.18)] bg-white/70 text-[var(--text-muted)]"
+          : "border-[var(--line)] bg-white/55 text-[var(--text-muted)]";
 
     return (
       <Shell setView={setView}>
@@ -300,7 +300,7 @@ export function ReceiptCaptureView({
                 <Upload className="h-6 w-6" />
               </span>
               <span className="text-sm font-bold">{isDragging ? t("Suelta la imagen aquí", "Drop the image here") : t("Subir, arrastrar o pegar", "Upload, drag or paste")}</span>
-              <span className="text-xs text-slate-500">{t("PDF, JPG o PNG", "PDF, JPG or PNG")}</span>
+              <span className="text-xs text-[var(--text-muted)]">{t("PDF, JPG o PNG", "PDF, JPG or PNG")}</span>
               <input
                 className="hidden"
                 type="file"
@@ -318,7 +318,7 @@ export function ReceiptCaptureView({
                 <Camera className="h-6 w-6" />
               </span>
               <span className="text-sm font-bold">{t("Usar cámara", "Use camera")}</span>
-              <span className="text-xs text-slate-500">{t("Toma una foto con el celular o la PC", "Take a photo with your phone or PC")}</span>
+              <span className="text-xs text-[var(--text-muted)]">{t("Toma una foto con el celular o la PC", "Take a photo with your phone or PC")}</span>
             </button>
           </div>
 
@@ -353,8 +353,8 @@ export function ReceiptCaptureView({
       <Shell setView={setView}>
         <section className="glass grid place-items-center gap-4 rounded-3xl px-6 py-16 text-center">
           <Loader2 className="h-8 w-8 animate-spin text-[var(--primary)]" />
-          <p className="text-sm font-semibold text-slate-700">{status ?? t("Procesando…", "Processing…")}</p>
-          <p className="max-w-sm text-xs text-slate-500">{t("Tu archivo se está subiendo de forma segura. Nada se guarda como movimiento hasta que tú lo apruebes.", "Your file is uploading securely. Nothing is saved as a transaction until you approve it.")}</p>
+          <p className="text-sm font-semibold text-[var(--foreground)]">{status ?? t("Procesando…", "Processing…")}</p>
+          <p className="max-w-sm text-xs text-[var(--text-muted)]">{t("Tu archivo se está subiendo de forma segura. Nada se guarda como movimiento hasta que tú lo apruebes.", "Your file is uploading securely. Nothing is saved as a transaction until you approve it.")}</p>
         </section>
       </Shell>
     );
@@ -364,7 +364,7 @@ export function ReceiptCaptureView({
   return (
     <Shell setView={setView}>
       {status && (
-        <p className="rounded-2xl border border-[rgba(80,102,0,0.18)] bg-white/70 px-4 py-3 text-sm text-slate-600">{status}</p>
+        <p className="rounded-2xl border border-[rgba(80,102,0,0.18)] bg-white/70 px-4 py-3 text-sm text-[var(--text-muted)]">{status}</p>
       )}
       <ReceiptReviewView
         state={state}
@@ -704,7 +704,7 @@ export function ReceiptReviewView({
         <div>
           <p className="kicker mb-1">{t("Revisión obligatoria", "Review required")}</p>
           <h3 className="serif text-2xl font-bold tracking-tight">{t("Revisa y aprueba el recibo", "Review and approve the receipt")}</h3>
-          <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-slate-600">
+          <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-[var(--text-muted)]">
             {t("Revisa lo que leyó la IA y ajusta solo si algo no cuadra. Nada se guarda hasta que presiones", "Check what the AI read and adjust only if something's off. Nothing is saved until you press")} <strong>{t("Aprobar y guardar", "Approve and save")}</strong>.
           </p>
         </div>
@@ -712,7 +712,7 @@ export function ReceiptReviewView({
 
       {/* Warn ONLY when the AI doubts it's a receipt — a positive banner would just be noise. */}
       {extraction && !extraction.isReceipt && (
-        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[rgba(186,26,26,0.28)] bg-[rgba(186,26,26,0.05)] px-4 py-3 text-sm text-slate-700">
+        <div className="mt-5 flex items-start gap-3 rounded-2xl border border-[rgba(186,26,26,0.28)] bg-[rgba(186,26,26,0.05)] px-4 py-3 text-sm text-[var(--foreground)]">
           <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-[var(--primary)]" />
           <span>{t("Esto no parece un recibo. Revísalo con cuidado.", "This doesn't look like a receipt. Review it carefully.")}</span>
         </div>
@@ -736,12 +736,12 @@ export function ReceiptReviewView({
               >
                 <FileText className="h-10 w-10" />
                 {t("Abrir PDF en otra pestaña", "Open PDF in a new tab")}
-                <span className="text-xs font-normal text-slate-500">{receiptDraft?.fileName ?? "documento.pdf"}</span>
+                <span className="text-xs font-normal text-[var(--text-muted)]">{receiptDraft?.fileName ?? "documento.pdf"}</span>
               </a>
             )}
             {!fileUrl && (
-              <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-slate-500">
-                <FileText className="h-8 w-8 text-slate-400" />
+              <div className="flex flex-col items-center justify-center gap-2 px-6 py-12 text-center text-sm text-[var(--text-muted)]">
+                <FileText className="h-8 w-8 text-[var(--text-subtle)]" />
                 {receiptDraft?.fileName ?? t("Sin vista previa disponible", "No preview available")}
               </div>
             )}
@@ -757,7 +757,7 @@ export function ReceiptReviewView({
                 </span>
               </div>
               {reasons.length > 0 && (
-                <ul className="mt-2 space-y-1 text-xs text-slate-600">
+                <ul className="mt-2 space-y-1 text-xs text-[var(--text-muted)]">
                   {reasons.map((reason) => (
                     <li key={reason}>· {reason}</li>
                   ))}
@@ -818,7 +818,7 @@ export function ReceiptReviewView({
           </div>
 
           {otherCurrency && (
-            <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-xs text-slate-600">
+            <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-xs text-[var(--text-muted)]">
               <div className="grid gap-3 sm:grid-cols-2">
                 <label className="grid gap-2 text-sm font-semibold">
                   {t("Tasa hacia", "Rate to")} {state.currency}
@@ -881,7 +881,7 @@ export function ReceiptReviewView({
               />
               {/* Discoverability: tell the user they can shorten it into a remembered nickname. */}
               {onSaveAlias && rawMerchant.trim() && (
-                <span className="text-xs font-normal text-slate-500">
+                <span className="text-xs font-normal text-[var(--text-muted)]">
                   {t(
                     "Edítalo para mostrarlo con un apodo corto; se recordará para este comercio en toda la app.",
                     "Edit it to show a short nickname; it'll be remembered for this merchant across the app.",
@@ -963,7 +963,7 @@ export function ReceiptReviewView({
           {saving ? t("Guardando…", "Saving…") : t("Aprobar y guardar", "Approve and save")}
         </button>
         <button
-          className="rounded-2xl border border-[var(--line)] bg-white px-6 py-3.5 text-base font-bold text-slate-600 transition hover:-translate-y-0.5"
+          className="rounded-2xl border border-[var(--line)] bg-white px-6 py-3.5 text-base font-bold text-[var(--text-muted)] transition hover:-translate-y-0.5"
           onClick={onCancel}
           type="button"
         >
@@ -971,7 +971,7 @@ export function ReceiptReviewView({
         </button>
       </div>
       {!canApprove && (
-        <p className="mt-3 text-xs text-slate-500">{t("Indica al menos un monto válido, una cuenta y una categoría para poder guardar.", "Enter at least a valid amount, an account and a category to be able to save.")}</p>
+        <p className="mt-3 text-xs text-[var(--text-muted)]">{t("Indica al menos un monto válido, una cuenta y una categoría para poder guardar.", "Enter at least a valid amount, an account and a category to be able to save.")}</p>
       )}
     </section>
   );
@@ -989,12 +989,12 @@ function Shell({ children, setView }: { children: React.ReactNode; setView: (v: 
         <div className="min-w-0">
           <p className="kicker">{t("Captura de recibos", "Receipt capture")}</p>
           <h2 className="serif mt-1.5 text-[1.9rem] font-bold leading-[1.05] tracking-tight md:text-[2.4rem]">{t("Capturar recibo", "Capture receipt")}</h2>
-          <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-[var(--text-muted)]">
             {t("Sube o fotografía un recibo. RindoMes te ayuda a leerlo, pero tú siempre revisas y apruebas antes de guardar.", "Upload or photograph a receipt. RindoMes helps you read it, but you always review and approve before saving.")}
           </p>
         </div>
         <button
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-white"
+          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] transition hover:bg-white"
           onClick={() => setView("home")}
           type="button"
         >
@@ -1090,7 +1090,7 @@ function ReceiptSummaryCard({
       </div>
       <p className="serif mt-2 text-3xl font-bold tracking-tight">
         {amountLabel}
-        {convertedLabel && <span className="text-sm font-normal text-slate-500">{convertedLabel}</span>}
+        {convertedLabel && <span className="text-sm font-normal text-[var(--text-muted)]">{convertedLabel}</span>}
       </p>
       <dl className="mt-3 grid gap-1.5 text-sm">
         <SummaryRow k={t("Categoría", "Category")} v={categoryName} />
@@ -1109,17 +1109,17 @@ function ReceiptSummaryCard({
           <ul className="grid gap-1 text-sm">
             {lineItems.slice(0, 6).map((item) => (
               <li key={item.key} className="flex items-baseline justify-between gap-3">
-                <span className="truncate text-slate-700">
+                <span className="truncate text-[var(--foreground)]">
                   {item.quantity > 1 ? `${item.quantity}× ` : ""}
                   {item.name || "—"}
                 </span>
-                <span className="shrink-0 font-semibold text-slate-800">
+                <span className="shrink-0 font-semibold text-[var(--foreground)]">
                   {item.amount ? formatMoney(Math.round(toCents(item.amount)), form.currency) : ""}
                 </span>
               </li>
             ))}
             {lineItems.length > 6 && (
-              <li className="text-xs text-slate-500">
+              <li className="text-xs text-[var(--text-muted)]">
                 +{lineItems.length - 6} {t("más", "more")}
               </li>
             )}
@@ -1141,8 +1141,8 @@ function ReceiptSummaryCard({
 function SummaryRow({ k, v }: { k: string; v: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <dt className="shrink-0 text-slate-500">{k}</dt>
-      <dd className="text-right font-semibold text-slate-800">{v}</dd>
+      <dt className="shrink-0 text-[var(--text-muted)]">{k}</dt>
+      <dd className="text-right font-semibold text-[var(--foreground)]">{v}</dd>
     </div>
   );
 }
@@ -1171,18 +1171,18 @@ function LineItemsEditor({
       <div className="flex items-center justify-between gap-3">
         <p className="kicker">{t("Productos", "Items")}</p>
         {rows.length > 0 && (
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-[var(--text-muted)]">
             {rows.length} {rows.length === 1 ? t("línea", "line") : t("líneas", "lines")} · {formatMoney(Math.round(totalCents), currency)}
           </span>
         )}
       </div>
 
       {rows.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-500">{t("Sin productos detallados. Agrega líneas si quieres desglosar el recibo.", "No itemized products. Add lines if you want to break down the receipt.")}</p>
+        <p className="mt-2 text-xs text-[var(--text-muted)]">{t("Sin productos detallados. Agrega líneas si quieres desglosar el recibo.", "No itemized products. Add lines if you want to break down the receipt.")}</p>
       ) : (
         <div className="mt-3 grid gap-2">
           {/* Column captions, hidden on narrow screens to keep rows readable. */}
-          <div className="hidden grid-cols-[1fr_4rem_6rem_2rem] gap-2 px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400 sm:grid">
+          <div className="hidden grid-cols-[1fr_4rem_6rem_2rem] gap-2 px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--text-subtle)] sm:grid">
             <span>{t("Producto", "Item")}</span>
             <span className="text-center">{t("Cant.", "Qty")}</span>
             <span className="text-right">{t("Importe", "Amount")}</span>
@@ -1216,7 +1216,7 @@ function LineItemsEditor({
                 type="button"
                 onClick={() => onRemove(row.key)}
                 aria-label={t("Quitar producto", "Remove item")}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--line)] bg-white text-slate-400 transition hover:border-[rgba(186,26,26,0.4)] hover:text-[var(--danger)]"
+                className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--line)] bg-white text-[var(--text-subtle)] transition hover:border-[rgba(186,26,26,0.4)] hover:text-[var(--danger)]"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

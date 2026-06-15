@@ -133,7 +133,7 @@ export function Onboarding({
             <div className="text-center">
               <Landmark className="mx-auto h-9 w-9 text-[var(--primary)]" />
               <h1 className="serif mt-6 text-5xl font-bold italic tracking-tight">RindoMes</h1>
-              <p className="mt-4 text-slate-600">{t("¿Cómo quieres llevar tu mes?", "How do you want to manage your month?")}</p>
+              <p className="mt-4 text-[var(--text-muted)]">{t("¿Cómo quieres llevar tu mes?", "How do you want to manage your month?")}</p>
             </div>
 
             <div className="mt-8 space-y-3">
@@ -155,7 +155,7 @@ export function Onboarding({
                         <span className="text-sm font-bold text-[var(--primary)]">✓</span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-slate-600">{t(option.description, modeDescriptionEn(option.mode))}</p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">{t(option.description, modeDescriptionEn(option.mode))}</p>
                   </button>
                 );
               })}
@@ -176,7 +176,7 @@ export function Onboarding({
             <button className="mt-8 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-6 py-4 text-base font-bold text-black transition hover:brightness-95" onClick={() => setStep(1)} type="button">
               {t("Continuar", "Continue")} <ArrowRight className="h-5 w-5" />
             </button>
-            <button className="mt-4 text-sm font-semibold text-slate-500 hover:text-slate-700" onClick={onSkip} type="button">
+            <button className="mt-4 text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)]" onClick={onSkip} type="button">
               {t("Configurar más tarde", "Set up later")}
             </button>
           </section>
@@ -209,10 +209,10 @@ export function Onboarding({
                   <div className="flex items-center gap-2" key={index}>
                     <input className="field min-w-0 flex-1" value={expense.name} onChange={(event) => updateExpense(setExpenses, index, { name: event.target.value })} placeholder={t("Concepto", "Description")} />
                     <div className="flex w-32 shrink-0 items-center rounded-[0.875rem] border border-black/10 bg-white px-2">
-                      <span className="text-sm text-slate-400">$</span>
+                      <span className="text-sm text-[var(--text-subtle)]">$</span>
                       <input className="w-full bg-transparent px-1 py-2 text-sm outline-none" value={expense.amount} onChange={(event) => updateExpense(setExpenses, index, { amount: event.target.value })} placeholder="0" inputMode="decimal" />
                     </div>
-                    <button className="text-slate-400 hover:text-[var(--danger)]" onClick={() => setExpenses((current) => current.filter((_, i) => i !== index))} type="button" aria-label={t("Quitar", "Remove")}><Trash2 className="h-4 w-4" /></button>
+                    <button className="text-[var(--text-subtle)] hover:text-[var(--danger)]" onClick={() => setExpenses((current) => current.filter((_, i) => i !== index))} type="button" aria-label={t("Quitar", "Remove")}><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}
               </div>
@@ -223,11 +223,11 @@ export function Onboarding({
 
             <div className="mt-4 rounded-3xl border border-white/70 bg-white/70 p-5 text-center">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-slate-600">{t("Ingresos totales", "Total income")}</span>
+                <span className="text-[var(--text-muted)]">{t("Ingresos totales", "Total income")}</span>
                 <span className="font-bold text-[var(--primary)]">{formatMoney(totalIncome, currency)}</span>
               </div>
               <div className="mt-1 flex items-center justify-between text-sm">
-                <span className="text-slate-600">{t("Gastos fijos", "Fixed expenses")}</span>
+                <span className="text-[var(--text-muted)]">{t("Gastos fijos", "Fixed expenses")}</span>
                 <span className="font-bold text-[var(--danger)]">-{formatMoney(totalFixed, currency)}</span>
               </div>
               <p className="kicker mt-4">{t("Remanente disponible", "Available remainder")}</p>
@@ -256,17 +256,17 @@ export function Onboarding({
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-soft)] text-[var(--primary)]"><Icon className="h-5 w-5" /></span>
                       <input className="min-w-0 flex-1 border-b border-black/15 bg-transparent py-1 font-semibold outline-none" value={account.name} onChange={(event) => updateAccount(setAccounts, index, { name: event.target.value })} placeholder={t("Nombre de la cuenta", "Account name")} />
                       {accounts.length > 1 && (
-                        <button className="text-slate-400 hover:text-[var(--danger)]" onClick={() => setAccounts((current) => current.filter((_, i) => i !== index))} type="button" aria-label={t("Quitar", "Remove")}><Trash2 className="h-4 w-4" /></button>
+                        <button className="text-[var(--text-subtle)] hover:text-[var(--danger)]" onClick={() => setAccounts((current) => current.filter((_, i) => i !== index))} type="button" aria-label={t("Quitar", "Remove")}><Trash2 className="h-4 w-4" /></button>
                       )}
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-3">
-                      <label className="text-xs font-semibold text-slate-500">
+                      <label className="text-xs font-semibold text-[var(--text-muted)]">
                         {t("Tipo", "Type")}
                         <select className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2 py-2 text-sm" value={account.kind} onChange={(event) => updateAccount(setAccounts, index, { kind: event.target.value as Account["kind"] })}>
                           {ACCOUNT_KINDS.map((option) => <option key={option.kind} value={option.kind}>{accountKindLabel(option.kind)}</option>)}
                         </select>
                       </label>
-                      <label className="text-xs font-semibold text-slate-500">
+                      <label className="text-xs font-semibold text-[var(--text-muted)]">
                         {t("Saldo actual", "Current balance")}
                         <input className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2 py-2 text-sm" value={account.balance} onChange={(event) => updateAccount(setAccounts, index, { balance: event.target.value })} placeholder="0.00" inputMode="decimal" />
                       </label>
@@ -274,7 +274,7 @@ export function Onboarding({
                   </div>
                 );
               })}
-              <button className="flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-black/20 py-3 text-sm font-semibold text-slate-600 hover:bg-white/50" onClick={() => setAccounts((current) => [...current, { name: "", kind: "bank", balance: "" }])} type="button">
+              <button className="flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-black/20 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-white/50" onClick={() => setAccounts((current) => [...current, { name: "", kind: "bank", balance: "" }])} type="button">
                 <Plus className="h-4 w-4" /> {t("Añadir otra cuenta", "Add another account")}
               </button>
             </div>
@@ -283,7 +283,7 @@ export function Onboarding({
               <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-6 py-4 text-base font-bold text-black transition hover:brightness-95" type="submit">
                 {t("Crear mi primer mes", "Create my first month")} <ArrowRight className="h-5 w-5" />
               </button>
-              <button className="text-sm font-semibold text-slate-500 hover:text-slate-700" onClick={() => setStep(1)} type="button">
+              <button className="text-sm font-semibold text-[var(--text-muted)] hover:text-[var(--foreground)]" onClick={() => setStep(1)} type="button">
                 {t("Atrás", "Back")}
               </button>
             </div>
@@ -297,7 +297,7 @@ export function Onboarding({
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="mt-3 block">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">{label}</span>
+      <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">{label}</span>
       {children}
     </label>
   );
@@ -306,7 +306,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function MoneyInput({ currency, value, onChange }: { currency: CurrencyCode; value: string; onChange: (value: string) => void }) {
   return (
     <div className="flex items-center gap-2 border-b-2 border-[var(--ink)] py-2">
-      <span className="serif text-2xl font-bold text-slate-400">{currency === "EUR" ? "€" : "$"}</span>
+      <span className="serif text-2xl font-bold text-[var(--text-subtle)]">{currency === "EUR" ? "€" : "$"}</span>
       <input className="w-full bg-transparent text-2xl font-semibold outline-none" value={value} onChange={(event) => onChange(event.target.value)} placeholder="0.00" inputMode="decimal" />
     </div>
   );
@@ -316,7 +316,7 @@ function StepNav({ onBack, onNext }: { onBack: () => void; onNext: () => void })
   const { t } = useT();
   return (
     <div className="mt-auto flex items-center gap-3 pt-8">
-      <button className="rounded-full border border-black/15 px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-white/50" onClick={onBack} type="button">{t("Atrás", "Back")}</button>
+      <button className="rounded-full border border-black/15 px-5 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-white/50" onClick={onBack} type="button">{t("Atrás", "Back")}</button>
       <button className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-6 py-3 text-base font-bold text-black transition hover:brightness-95" onClick={onNext} type="button">
         {t("Continuar", "Continue")} <ArrowRight className="h-5 w-5" />
       </button>

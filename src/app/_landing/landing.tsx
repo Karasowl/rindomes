@@ -63,7 +63,7 @@ export function Landing() {
           <section id="captura" className="mx-auto w-full max-w-[1280px] scroll-mt-24 px-5 py-24 sm:px-8">
             <p className="kicker">Captura</p>
             <h2 className="serif mt-3 max-w-3xl text-4xl font-bold tracking-tight md:text-5xl">Una sola entrada. Tú eliges cómo.</h2>
-            <p className="mt-4 max-w-2xl text-slate-600">
+            <p className="mt-4 max-w-2xl text-[var(--text-muted)]">
               Escribe, dicta o saca foto al recibo. RindoMes guarda <strong className="text-[#1d1b1a]">exactamente qué fue</strong> cada gasto
               —no una etiqueta vaga— y lo clasifica solo. Tú solo confirmas y sigues.
             </p>
@@ -76,7 +76,7 @@ export function Landing() {
                       <Icon className="h-6 w-6" />
                     </span>
                     <h3 className="serif mt-5 text-2xl font-bold">{item.title}</h3>
-                    <p className="mt-2 text-slate-600">{item.body}</p>
+                    <p className="mt-2 text-[var(--text-muted)]">{item.body}</p>
                   </div>
                 );
               })}
@@ -87,7 +87,7 @@ export function Landing() {
           <section id="insights" className="mx-auto w-full max-w-[1280px] scroll-mt-24 px-5 py-24 sm:px-8">
             <p className="kicker">Insights</p>
             <h2 className="serif mt-3 max-w-3xl text-4xl font-bold tracking-tight md:text-5xl">Inteligencia, no solo registros.</h2>
-            <p className="mt-4 max-w-2xl text-slate-600">
+            <p className="mt-4 max-w-2xl text-[var(--text-muted)]">
               Tu Inicio te dice qué pasa con tu plata en lenguaje claro, sin que armes ni una tabla.
             </p>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
@@ -99,7 +99,7 @@ export function Landing() {
                       <Icon className="h-6 w-6" />
                     </span>
                     <h3 className="serif mt-5 text-2xl font-bold">{item.title}</h3>
-                    <p className="mt-2 text-slate-600">{item.body}</p>
+                    <p className="mt-2 text-[var(--text-muted)]">{item.body}</p>
                   </div>
                 );
               })}
@@ -114,10 +114,10 @@ export function Landing() {
               {/* Gratis */}
               <div className="glass rounded-[1.75rem] p-8">
                 <h3 className="serif text-2xl font-bold">Gratis</h3>
-                <p className="mt-1 text-slate-600">Para llevar tu mes con claridad, sin pagar nada.</p>
+                <p className="mt-1 text-[var(--text-muted)]">Para llevar tu mes con claridad, sin pagar nada.</p>
                 <ul className="mt-6 space-y-3">
                   {FREE_FEATURES.map((feat) => (
-                    <li className="flex items-start gap-2.5 text-slate-700" key={feat}>
+                    <li className="flex items-start gap-2.5 text-[var(--foreground)]" key={feat}>
                       <Check className="mt-0.5 h-5 w-5 shrink-0 text-[var(--primary)]" /> {feat}
                     </li>
                   ))}
@@ -130,10 +130,10 @@ export function Landing() {
               <div className="rounded-[1.75rem] border-2 border-[var(--lime)] bg-[rgba(204,255,0,0.1)] p-8">
                 <span className="mb-3 inline-block rounded-full bg-[var(--lime)] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black">Recomendado</span>
                 <h3 className="serif text-2xl font-bold">Pro</h3>
-                <p className="mt-1 text-slate-600">Cuando quieres que la IA haga el trabajo pesado.</p>
+                <p className="mt-1 text-[var(--text-muted)]">Cuando quieres que la IA haga el trabajo pesado.</p>
                 <ul className="mt-6 space-y-3">
                   {PRO_FEATURES.map((feat) => (
-                    <li className="flex items-start gap-2.5 text-slate-700" key={feat}>
+                    <li className="flex items-start gap-2.5 text-[var(--foreground)]" key={feat}>
                       <Check className="mt-0.5 h-5 w-5 shrink-0 text-[var(--primary)]" /> {feat}
                     </li>
                   ))}
@@ -156,7 +156,7 @@ export function Landing() {
                     {item.q}
                     <span className="serif text-2xl text-[var(--primary)] transition-transform group-open:rotate-45">+</span>
                   </summary>
-                  <p className="mt-3 text-slate-600">{item.a}</p>
+                  <p className="mt-3 text-[var(--text-muted)]">{item.a}</p>
                 </details>
               ))}
             </div>
@@ -167,7 +167,7 @@ export function Landing() {
               <h2 className="serif mt-5 text-4xl font-bold tracking-tight md:text-5xl">
                 Tu próximo mes empieza <span className="italic">con un gasto.</span>
               </h2>
-              <p className="mx-auto mt-4 max-w-xl text-slate-600">Sin configurar hojas. Registra el primero y deja que la app haga la inteligencia.</p>
+              <p className="mx-auto mt-4 max-w-xl text-[var(--text-muted)]">Sin configurar hojas. Registra el primero y deja que la app haga la inteligencia.</p>
               <Link href="/app" className="group mt-8 inline-flex items-center justify-center gap-2 rounded-full px-9 py-4 text-base font-bold transition-transform hover:-translate-y-0.5" style={{ background: "#ccff00", color: "#1d1b1a", boxShadow: "0 10px 30px rgba(80,102,0,0.28)" }}>
                 Empezar gratis <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
@@ -175,10 +175,10 @@ export function Landing() {
           </section>
 
           <footer className="border-t border-white/40 py-10">
-            <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center justify-between gap-4 px-5 text-sm text-slate-500 sm:px-8 md:flex-row">
+            <div className="mx-auto flex w-full max-w-[1280px] flex-col items-center justify-between gap-4 px-5 text-sm text-[var(--text-muted)] sm:px-8 md:flex-row">
               <div className="flex items-center gap-2">
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-[var(--lime)] text-[10px] font-bold">RM</span>
-                <span className="font-semibold text-slate-700">RindoMes</span>
+                <span className="font-semibold text-[var(--foreground)]">RindoMes</span>
               </div>
               <p>Hecho para que tu dinero rinda. © {new Date().getFullYear()}</p>
               <Link className="font-semibold text-[var(--primary)] hover:underline" href="/app">Entrar a la app →</Link>
