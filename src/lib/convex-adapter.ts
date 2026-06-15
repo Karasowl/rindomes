@@ -516,7 +516,9 @@ export function stateFromConvexSnapshot(snapshot: ConvexHouseholdSnapshot, fallb
       exchangeRateDate: stringValue(transaction, "exchangeRateDate", stringValue(transaction, "date", today)),
       exchangeRateSource: ["api", "manual", "same_currency"].includes(stringValue(transaction, "exchangeRateSource")) ? stringValue(transaction, "exchangeRateSource") as Transaction["exchangeRateSource"] : "same_currency",
       status: ["approved", "needs_review", "duplicate", "adjustment"].includes(stringValue(transaction, "status")) ? stringValue(transaction, "status") as Transaction["status"] : "approved",
-      createdBy: stringValue(transaction, "createdByMemberId", members[0]?.name ?? "RindoMes"),
+      // Atribución real: el autor que saveSnapshot guardó en `createdByName`. El fallback a
+      // members[0] solo aplica a movimientos viejos guardados antes de este campo.
+      createdBy: stringValue(transaction, "createdByName", members[0]?.name ?? "RindoMes"),
       attachmentNames: [],
       splits: (splitsByTransaction.get(id) ?? []).map((split) => ({
         id: stringValue(split, "_id", `split-${id}`),

@@ -187,6 +187,10 @@ export default defineSchema({
     exchangeRateSource: v.union(v.literal("api"), v.literal("manual"), v.literal("same_currency")),
     status: movementStatus,
     createdByMemberId: v.optional(v.id("members")),
+    // Nombre del autor que registró el movimiento (quién puso qué). Optional + additive para
+    // que las filas viejas sigan válidas; saveSnapshot lo escribe desde el `createdBy` del cliente
+    // y el adapter lo lee de vuelta, de modo que la atribución por persona sobrevive la nube.
+    createdByName: v.optional(v.string()),
     attachmentIds: v.array(v.id("attachments")),
     createdAt: v.number(),
     updatedAt: v.number(),

@@ -67,6 +67,9 @@ export function ConvexSync({
   const { isAuthenticated } = useConvexAuth();
   const myHousehold = useQuery(api.finance.getMyHousehold, isAuthenticated ? {} : "skip");
   const claimInvites = useMutation(api.finance.claimInvites);
+  const claimHousehold = useMutation(api.finance.claimHousehold);
+  // Guards the one-shot adoption below so it fires once per local household, not on every render.
+  const claimedRef = useRef<string | null>(null);
 
   // Surface the active householdId to the parent (AppShell). This single effect
   // covers every way householdId can change — the initial localStorage value, the
@@ -81,6 +84,22 @@ export function ConvexSync({
   useEffect(() => {
     if (isAuthenticated) void claimInvites({}).catch(() => {});
   }, [isAuthenticated, claimInvites]);
+
+  // Auth-first migration: a household this browser created anonymously (before auth-first)
+  // sits in the cloud unclaimed/open. The moment its owner signs in — and the account has no
+  // hogar of its own yet (myHousehold === null) — adopt the local one so it gets a real owner
+  // and is locked down. Once claimed, getMyHousehold resolves to it and the sync proceeds
+  // normally. One-shot per local household via claimedRef so we never loop.
+  useEffect(() => {
+    if (!isAuthenticated || !householdId || myHousehold !== null) return;
+    if (claimedRef.current === householdId) return;
+    claimedRef.current = householdId;
+    void claimHousehold({ householdId: householdId as Id<"households"> }).catch(() => {
+      // Not adoptable (already owned by someone else): drop the local pointer so the user
+      // hydrates their own account-scoped hogar instead of retrying a forbidden one.
+      claimedRef.current = null;
+    });
+  }, [isAuthenticated, householdId, myHousehold, claimHousehold]);
 
   // When signed in, the account's household is the source of truth: switch to it
   // (this is how an invited member ends up on the shared hogar across devices).

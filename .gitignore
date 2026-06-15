@@ -40,6 +40,7 @@ dev-server*.log
 
 # vercel
 .vercel
+vercel-deploy.log
 
 # source-recovery tooling (transient; downloaded source / tokens / scripts)
 /_recover/

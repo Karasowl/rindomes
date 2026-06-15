@@ -36,11 +36,12 @@ function clickNav(name: string) {
 }
 
 describe("RindoMesApp — capture flow (integration)", () => {
-  // After the eyes-on redesign, the Add screen leads with amount + category; the
-  // secondary fields (date, description, …) live in a "Detalles" modal opened from a
+  // After the low-cognitive-load redesign, the Add screen leads with amount + category +
+  // the "¿Qué fue exactamente?" description (all on the main screen); the remaining
+  // secondary fields (date, merchant, …) live in a "Más detalles" modal opened from a
   // compact row. The tests open that modal to reach those fields.
   function openDetails() {
-    fireEvent.click(screen.getAllByText("Detalles")[0]);
+    fireEvent.click(screen.getAllByText("Más detalles")[0]);
   }
 
   it("captures an expense from the Add view and shows it in Movements", () => {
@@ -52,26 +53,27 @@ describe("RindoMesApp — capture flow (integration)", () => {
 
     // The capture screen is the heart of the product — it must be reachable.
     clickNav("Añadir");
-    expect(screen.getByRole("heading", { name: /Añadir movimiento/i })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Registrar" })).toBeTruthy();
 
-    // Primary fields are on the main Add screen.
+    // Primary fields are on the main Add screen: amount, category, and the literal
+    // "¿Qué fue exactamente?" description (no longer buried in a modal).
     const amount = container.querySelector<HTMLInputElement>('input[placeholder="0"]');
     const categorySelect = [...container.querySelectorAll<HTMLSelectElement>("select")].find((s) =>
       [...s.options].some((o) => o.value === "food"),
     );
+    const description = container.querySelector<HTMLInputElement>('input[placeholder*="Bravo"]');
     expect(amount).toBeTruthy();
     expect(categorySelect).toBeTruthy();
+    expect(description).toBeTruthy();
     setValue(amount!, "500");
     setValue(categorySelect!, "food");
+    setValue(description!, "Prueba integracion");
 
-    // Date + description live in the "Detalles" modal.
+    // Date still lives in the "Más detalles" modal.
     openDetails();
     const date = container.querySelector<HTMLInputElement>('input[type="date"]');
-    const description = container.querySelector<HTMLInputElement>('input[placeholder*="farmacia"]');
     expect(date).toBeTruthy();
-    expect(description).toBeTruthy();
     setValue(date!, inMonthDate); // inside the active (current) month
-    setValue(description!, "Prueba integracion");
 
     fireEvent.click(screen.getByRole("button", { name: "Guardar movimiento" }));
 

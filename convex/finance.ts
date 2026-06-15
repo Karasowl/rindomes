@@ -54,15 +54,20 @@ async function householdMembersOf(ctx: any, householdId: any) {
     .collect();
 }
 
-// Anonymous households (no membership records) stay open for the demo. Once a
-// household has members, only those members may read/write it.
+// Auth-first: NOBODY reaches a household without a real session. The internet
+// can no longer read/write a household just by knowing its id.
+//   - No session            -> rejected outright (this closed the open-by-default hole).
+//   - Session, no owner yet  -> allowed; the caller claims it on first access (legacy
+//                               anonymous households created before auth-first are adopted
+//                               by the first signed-in user that opens them).
+//   - Session, has owners    -> only the member users may read/write it.
 // EXPORTED so the other backend modules (receipts.ts, entitlement.ts) reuse the
 // exact same authorization rules. Signature is stable and load-bearing — do not
 // change it without updating those callers.
 export async function assertCanAccess(ctx: any, householdId: any, userId: any) {
-  const members = await householdMembersOf(ctx, householdId);
-  if (members.length === 0) return;
   if (!userId) throw new Error("Inicia sesión para acceder a este hogar.");
+  const members = await householdMembersOf(ctx, householdId);
+  if (members.length === 0) return; // unclaimed household — the signed-in caller adopts it
   if (!members.some((m: any) => m.userId === userId)) {
     throw new Error("No tienes acceso a este hogar.");
   }
@@ -180,6 +185,29 @@ export const claimInvites = mutationGeneric({
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
       .first();
     return membership?.householdId ?? null;
+  },
+});
+
+/**
+ * Adopts a still-unclaimed household (one with no membership records) for the
+ * signed-in user. This is the migration seam for legacy anonymous households
+ * created before auth-first: the client knows its local householdId, and on the
+ * first authenticated load it calls this so the hogar gets a real owner and is
+ * locked down. Idempotent: if the household already has members, it just verifies
+ * the caller is one of them and changes nothing.
+ */
+export const claimHousehold = mutationGeneric({
+  args: { householdId: v.id("households") },
+  handler: async (ctx, { householdId }) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Inicia sesión para reclamar este hogar.");
+    const members = await householdMembersOf(ctx, householdId);
+    if (members.length === 0) {
+      await ensureOwnerMembership(ctx, householdId, userId);
+      return { claimed: true };
+    }
+    await assertCanAccess(ctx, householdId, userId);
+    return { claimed: false };
   },
 });
 
@@ -713,7 +741,14 @@ export const saveSnapshot = mutationGeneric({
   handler: async (ctx, args) => {
     const now = Date.now();
     const userId = await getAuthUserId(ctx);
-    if (args.householdId) await assertCanAccess(ctx, args.householdId, userId);
+    // Auth-first: a brand-new hogar can only be provisioned by a signed-in user, so it is
+    // owned from birth and never lands in the cloud unclaimed/open. Existing hogares go
+    // through the membership check (which also rejects anonymous callers).
+    if (args.householdId) {
+      await assertCanAccess(ctx, args.householdId, userId);
+    } else if (!userId) {
+      throw new Error("Inicia sesión para sincronizar tu hogar en la nube.");
+    }
 
     // Optimistic concurrency: refuse to overwrite a household that already advanced past the
     // version the client last hydrated, so a stale device can never silently wipe newer cloud
@@ -956,6 +991,9 @@ export const saveSnapshot = mutationGeneric({
         exchangeRateDate: transaction.exchangeRateDate,
         exchangeRateSource: transaction.exchangeRateSource,
         status: transaction.status,
+        // Atribución: guardamos el nombre del autor que mandó el cliente, para que "quién puso qué"
+        // sobreviva el round-trip a la nube (antes se perdía y al leer caía a members[0]).
+        createdByName: transaction.createdBy,
         attachmentIds: [],
         createdAt: now,
         updatedAt: now,

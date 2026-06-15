@@ -48,7 +48,7 @@ import { PaywallView } from "./paywall-view";
 import { ReceiptCaptureView } from "./receipt-capture";
 import { entitlementForAi, type AiCaptureResult, type EntitlementView, ENTITLEMENT_COPY } from "@/lib/entitlement";
 import { receiptToInput, suggestionToInput, RECEIPT_TAG, RECEIPT_CREATED_BY } from "@/lib/capture-input";
-import { advanceRecurringDate, endOfMonth, nextMonthKey } from "@/lib/dates";
+import { advanceRecurringDate, defaultDateForMonth, endOfMonth, formatMonthLabel, nextMonthKey, prevMonthKey } from "@/lib/dates";
 import { mergeMonthlyPlans, monthlyPlanId, monthlyPlansFromCategories, prepareMonthlyPlansForMonth, withMonthlyCategoryPlan } from "@/lib/planning";
 import { isConvexConfigured } from "@/lib/convex-client";
 import { LanguageToggle, useT } from "@/lib/i18n";
@@ -87,18 +87,24 @@ const navByView = new Map(nav.map((item) => [item.view, item] as const));
 
 // Desktop sidebar: a short "daily" tier is always visible; everything else lives under a
 // collapsible "Más herramientas" section so the app reads as configure-once / use-daily
-// instead of an overwhelming wall of 20 screens. Mobile keeps the flat `nav` bottom bar.
-const primaryViews: View[] = ["home", "add", "movements", "plan", "review"];
+// instead of an overwhelming wall of 20 screens.
+//
+// The daily tier is deliberately the three things RindoMes is FOR — ver (Inicio, ahora
+// fusionado con Insights), registrar (Añadir, la única entrada de captura) y revisar
+// (Movimientos) — más Revisión para confirmar lo que la app preparó. El presupuesto
+// (`plan`) baja a segundo plano: sigue disponible, pero deja de gobernar la app como en
+// la hoja de cálculo vieja. Mobile keeps the flat `nav` bottom bar.
+const primaryViews: View[] = ["home", "add", "movements", "review"];
 const advancedGroups: Array<{ label: string; items: View[] }> = [
+  { label: "Plan y patrimonio", items: ["plan", "reports", "networth", "debts", "goals"] },
   { label: "Cuentas y automatización", items: ["accounts", "rules", "receipts", "ai"] },
-  { label: "Patrimonio", items: ["reports", "networth", "debts", "goals"] },
   { label: "Hogar y datos", items: ["family", "spaces", "import", "export"] },
   { label: "Sistema", items: ["setup", "account", "settings"] },
 ];
 const advancedViews = new Set<View>(advancedGroups.flatMap((group) => group.items));
 
 // Primary destinations for the mobile bottom bar (the rest live under "Más").
-const mobilePrimary: View[] = ["home", "plan", "add", "movements"];
+const mobilePrimary: View[] = ["home", "movements", "add", "review"];
 
 const modeLabels: Record<Mode, string> = {
   tracker: "Seguimiento",
@@ -148,6 +154,7 @@ function modeLabel(mode: Mode, t: Translate): string {
 
 function advancedGroupLabel(label: string, t: Translate): string {
   switch (label) {
+    case "Plan y patrimonio": return t("Plan y patrimonio", "Plan & net worth");
     case "Cuentas y automatización": return t("Cuentas y automatización", "Accounts & automation");
     case "Patrimonio": return t("Patrimonio", "Net worth");
     case "Hogar y datos": return t("Hogar y datos", "Household & data");
@@ -632,7 +639,7 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
           <CloudBindings householdId={householdId} onBindings={setCloud} />
         </>
       )}
-      <TopBar state={state} setView={navigate} canGoBack={viewHistory.length > 0} onBack={goBack} authed={authed} authEmail={authEmail} />
+      <TopBar state={state} setView={navigate} canGoBack={viewHistory.length > 0} onBack={goBack} authed={authed} authEmail={authEmail} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />
       <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-5 pb-12 pt-5 md:grid-cols-[244px_minmax(0,1fr)] md:px-12 lg:px-16">
         <aside className="app-scrollbar sticky top-24 hidden h-[calc(100vh-6.5rem)] flex-col gap-1.5 overflow-y-auto rounded-3xl border border-white/70 bg-white/55 p-2.5 backdrop-blur-xl md:flex">
           <div className="flex flex-col gap-0.5">
@@ -676,7 +683,7 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
               {t(`Vista de solo lectura para ${currentMember.name}. Puedes consultar y exportar, pero no cambiar datos financieros.`, `Read-only view for ${currentMember.name}. You can browse and export, but not change financial data.`)}
             </div>
           )}
-          {view === "home" && <HomeView state={state} summary={summary} usage={usage} setView={navigate} />}
+          {view === "home" && <HomeView state={state} summary={summary} usage={usage} setView={navigate} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />}
           {view === "setup" && <SetupView state={state} setState={guardedSetState} setView={navigate} />}
           {view === "spaces" && <SpacesView state={state} setState={guardedSetState} />}
           {view === "plan" && <PlanView state={state} usage={usage} summary={summary} setState={guardedSetState} />}
@@ -734,7 +741,144 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
   );
 }
 
-function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail = "" }: { state: AppState; setView: (view: View) => void; canGoBack: boolean; onBack: () => void; authed?: boolean; authEmail?: string }) {
+function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: string) => void }) {
+  const { t } = useT();
+  const lang = t("es", "en") as "es" | "en";
+  // Mes real "ahora": si el mes activo no es este, mostramos un botón "Hoy" para volver, y así
+  // el usuario nunca queda atrapado viendo un mes viejo sin darse cuenta.
+  const now = new Date();
+  const realMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const onCurrent = month === realMonth;
+
+  // Popover propio (NO el selector nativo del navegador, que rompía el diseño de la app):
+  // navegación de año + grilla de meses, estilada con los tokens de la app.
+  const [open, setOpen] = useState(false);
+  const [activeYear, activeMonthIdx] = month.split("-").map(Number) as [number, number];
+  // Año que se está navegando dentro del popover (independiente del mes activo hasta elegir).
+  const [viewYear, setViewYear] = useState(activeYear);
+  // Reabrir siempre sobre el año del mes activo.
+  useEffect(() => {
+    if (open) setViewYear(activeYear);
+  }, [open, activeYear]);
+
+  const monthNames = lang === "es"
+    ? ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+    : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const [realYear, realMonthIdx] = realMonth.split("-").map(Number) as [number, number];
+
+  function pick(monthIndex: number) {
+    onChange(`${viewYear}-${String(monthIndex + 1).padStart(2, "0")}`);
+    setOpen(false);
+  }
+
+  return (
+    <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-white/70 bg-white/60 px-1 py-1 shadow-sm backdrop-blur">
+      <button
+        type="button"
+        aria-label={t("Mes anterior", "Previous month")}
+        onClick={() => onChange(prevMonthKey(month))}
+        className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={t("Elegir mes", "Pick month")}
+          className="flex items-center gap-1 whitespace-nowrap rounded-full px-1.5 py-0.5 text-sm font-bold text-[var(--primary)] transition hover:bg-white"
+        >
+          <span>{formatMonthLabel(month, lang)}</span>
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <>
+            {/* Capa para cerrar al hacer clic fuera. */}
+            <button
+              type="button"
+              aria-hidden
+              tabIndex={-1}
+              className="fixed inset-0 z-40 cursor-default"
+              onClick={() => setOpen(false)}
+            />
+            <div
+              role="dialog"
+              aria-label={t("Elegir mes", "Pick month")}
+              className="absolute left-1/2 top-[calc(100%+0.5rem)] z-50 w-64 -translate-x-1/2 rounded-2xl border border-[var(--line)] bg-white p-3 shadow-xl"
+            >
+              {/* Navegación de año */}
+              <div className="flex items-center justify-between px-1">
+                <button
+                  type="button"
+                  aria-label={t("Año anterior", "Previous year")}
+                  onClick={() => setViewYear((y) => y - 1)}
+                  className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <span className="text-sm font-bold text-[var(--ink)]">{viewYear}</span>
+                <button
+                  type="button"
+                  aria-label={t("Año siguiente", "Next year")}
+                  onClick={() => setViewYear((y) => y + 1)}
+                  className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-slate-100"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              {/* Grilla de meses */}
+              <div className="mt-2 grid grid-cols-3 gap-1.5">
+                {monthNames.map((name, idx) => {
+                  const isActive = viewYear === activeYear && idx === activeMonthIdx - 1;
+                  const isReal = viewYear === realYear && idx === realMonthIdx - 1;
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => pick(idx)}
+                      aria-current={isActive ? "true" : undefined}
+                      className={`rounded-xl py-2 text-[13px] font-semibold transition ${
+                        isActive
+                          ? "bg-[var(--lime)] text-black shadow-sm"
+                          : isReal
+                            ? "text-[var(--primary)] ring-1 ring-inset ring-[var(--primary)]/40 hover:bg-slate-50"
+                            : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      <button
+        type="button"
+        aria-label={t("Mes siguiente", "Next month")}
+        onClick={() => onChange(nextMonthKey(month))}
+        className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+      {!onCurrent && (
+        <button
+          type="button"
+          onClick={() => onChange(realMonth)}
+          className="ml-0.5 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11px] font-bold text-black transition hover:brightness-95"
+          aria-label={t("Ir al mes actual", "Go to current month")}
+        >
+          {t("Hoy", "Today")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail = "", onChangeMonth }: { state: AppState; setView: (view: View) => void; canGoBack: boolean; onBack: () => void; authed?: boolean; authEmail?: string; onChangeMonth: (month: string) => void }) {
   const { t } = useT();
   const signedIn = authed || state.user.status === "signed_in";
   const accountLabel = authed ? (authEmail || state.user.name || t("Cuenta", "Account")) : (state.user.status === "signed_in" ? state.user.name : t("Inicia sesión", "Sign in"));
@@ -761,8 +905,12 @@ function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail =
             </button>
           )}
           <div className="grid h-10 w-10 place-items-center rounded-full border border-white/80 bg-[var(--lime)] text-sm font-bold shadow-sm">RM</div>
-          <h1 className="serif text-3xl font-bold italic tracking-tight md:text-4xl">RindoMes</h1>
+          <h1 className="serif hidden text-3xl font-bold italic tracking-tight sm:block md:text-4xl">RindoMes</h1>
         </div>
+        {/* Selector de mes GLOBAL: la app trabaja por mes, así que ver y cambiar el mes vive en la
+            cabecera, visible en todas las vistas. Todo lo derivado usa state.activeMonth, así que
+            cambiarlo recalcula cada pantalla. */}
+        <MonthSwitcher month={state.activeMonth} onChange={onChangeMonth} />
         <div className="flex items-center gap-2">
           <LanguageToggle />
           <button className="hidden max-w-[180px] rounded-full bg-white/60 px-4 py-2 text-left text-xs font-semibold text-slate-700 transition hover:bg-white md:block" onClick={() => setView("account")} type="button">
@@ -848,7 +996,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
         </div>
       )}
       <nav className="fixed bottom-5 left-1/2 z-40 grid w-[92%] max-w-md -translate-x-1/2 grid-cols-5 items-center rounded-full border border-white/80 bg-white/80 px-2 py-2 shadow-2xl backdrop-blur-2xl md:hidden">
-        {(["home", "plan", "add", "movements", "more"] as const).map((slot) => {
+        {(["home", "movements", "add", "review", "more"] as const).map((slot) => {
           if (slot === "add") {
             return (
               <div className="flex justify-center" key="add">
@@ -880,7 +1028,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           const item = navByView.get(slot)!;
           const Icon = item.icon;
           const active = view === slot;
-          const label = slot === "movements" ? t("Movs", "Txns") : navLabel(slot, t);
+          const label = slot === "movements" ? t("Movs", "Txns") : slot === "review" ? t("Revisar", "Review") : navLabel(slot, t);
           return (
             <button
               className={`flex flex-col items-center gap-0.5 text-[10px] ${active ? "text-[var(--primary)]" : "text-slate-500"}`}
@@ -903,72 +1051,168 @@ function HomeView({
   summary,
   usage,
   setView,
+  onChangeMonth,
 }: {
   state: AppState;
   summary: ReturnType<typeof summarize>;
   usage: ReturnType<typeof categoryUsage>;
   setView: (view: View) => void;
+  onChangeMonth: (month: string) => void;
 }) {
   const { t } = useT();
-  const risk = usage.filter((item) => item.ratio >= 0.75).slice(0, 3);
+  const lang = t("es", "en") as "es" | "en";
+  // Contexto temporal: ¿estoy viendo un mes futuro o un mes pasado vacío? Sin esto, saltar a un
+  // mes sin datos muestra todo en cero sin explicar por qué.
+  const realMonth = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}`;
+  const isFutureMonth = state.activeMonth > realMonth;
   const monthTransactions = transactionsForMonth(state, state.activeMonth);
+  const monthHasData = monthTransactions.length > 0;
   const recentMonthTransactions = recentTransactions(monthTransactions);
+  const approved = monthTransactions.filter((transaction) => transaction.status === "approved");
+
+  // Gastos reales del mes (sin transferencias ni ingresos). La descripción literal de cada
+  // movimiento es la fuente del "exactamente de qué fue" que la hoja de cálculo perdía.
+  const expenseTxns = approved.filter((transaction) => {
+    const category = categoryById(state.categories, transaction.categoryId);
+    return transaction.type !== "transfer" && category != null && category.group !== "income";
+  });
+
+  // En qué se va la plata: top categorías por GASTO REAL (no por % de presupuesto), cada una
+  // con su movimiento más grande para que se vea el detalle concreto, no solo la categoría.
+  const topSpending = [...usage]
+    .filter((item) => item.spent > 0)
+    .sort((a, b) => b.spent - a.spent)
+    .slice(0, 5)
+    .map((item) => {
+      const inCategory = expenseTxns.filter((transaction) => transaction.categoryId === item.id);
+      const biggest = [...inCategory].sort((a, b) => b.amountCents - a.amountCents)[0];
+      return { id: item.id, name: item.name, spent: item.spent, count: inCategory.length, detail: biggest?.description ?? "" };
+    });
+  const topSpent = topSpending.reduce((sum, item) => sum + item.spent, 0) || 1;
+
+  // El gasto más grande del mes, con su texto literal.
+  const biggestExpense = [...expenseTxns].sort((a, b) => b.amountCents - a.amountCents)[0];
+
+  // Tendencia: este mes vs. el promedio de los meses anteriores con datos. Mira hasta 3 meses
+  // hacia atrás CRUZANDO el cambio de año (antes solo comparaba dentro del año en curso, así que
+  // enero se quedaba sin comparación). Reusa annualRows por año para que el gasto salga correcto
+  // (incluye splits/reembolsos).
+  const priorMonthKeys: string[] = [];
+  let cursorMonth = state.activeMonth;
+  for (let i = 0; i < 3; i++) {
+    cursorMonth = prevMonthKey(cursorMonth);
+    priorMonthKeys.push(cursorMonth);
+  }
+  const rowsByYear = new Map(Array.from(new Set(priorMonthKeys.map((key) => key.slice(0, 4)))).map((y) => [y, annualRows(state, y)] as const));
+  const priorOutflows = priorMonthKeys
+    .map((key) => rowsByYear.get(key.slice(0, 4))?.[Number(key.slice(5, 7)) - 1])
+    .filter((row): row is NonNullable<typeof row> => Boolean(row) && row!.transactionCount > 0)
+    .map((row) => row.outflow);
+  const avgOutflow = priorOutflows.length ? Math.round(priorOutflows.reduce((sum, value) => sum + value, 0) / priorOutflows.length) : 0;
+  const trendPct = avgOutflow > 0 ? (summary.outflow - avgOutflow) / avgOutflow : 0;
+  const spentShare = summary.income > 0 ? summary.outflow / summary.income : 0;
+
+  // Observaciones en lenguaje claro, todas derivadas de los datos reales de arriba.
+  const observations: string[] = [];
+  if (biggestExpense) {
+    observations.push(t(
+      `Tu mayor gasto del mes fue ${formatMoney(biggestExpense.amountCents, state.currency)}: ${biggestExpense.description}.`,
+      `Your biggest expense this month was ${formatMoney(biggestExpense.amountCents, state.currency)}: ${biggestExpense.description}.`,
+    ));
+  }
+  if (avgOutflow > 0 && Math.abs(trendPct) >= 0.1) {
+    observations.push(trendPct > 0
+      ? t(`Llevas ${Math.round(trendPct * 100)}% más de gasto que tu promedio mensual (${formatMoney(avgOutflow, state.currency)}).`, `You're spending ${Math.round(trendPct * 100)}% more than your monthly average (${formatMoney(avgOutflow, state.currency)}).`)
+      : t(`Vas ${Math.round(Math.abs(trendPct) * 100)}% por debajo de tu promedio mensual (${formatMoney(avgOutflow, state.currency)}).`, `You're ${Math.round(Math.abs(trendPct) * 100)}% below your monthly average (${formatMoney(avgOutflow, state.currency)}).`));
+  }
+  if (summary.income > 0) {
+    observations.push(t(`Has gastado el ${Math.round(spentShare * 100)}% de tus ingresos de este mes.`, `You've spent ${Math.round(spentShare * 100)}% of this month's income.`));
+  }
+  if (summary.savingsRate > 0) {
+    observations.push(t(`Tu tasa de ahorro del mes va en ${Math.round(summary.savingsRate * 100)}%.`, `Your savings rate this month is ${Math.round(summary.savingsRate * 100)}%.`));
+  }
+
   return (
     <div className="grid gap-5">
+      {/* Contexto cuando ves un mes futuro, o un mes pasado sin movimientos: explica por qué está
+          en cero y ofrece volver al mes actual (en vez de dejar al usuario confundido). */}
+      {(isFutureMonth || (state.activeMonth !== realMonth && !monthHasData)) && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[var(--lime)] bg-[rgba(204,255,0,0.14)] px-5 py-3.5 text-sm">
+          <span className="font-medium text-slate-700">
+            {isFutureMonth
+              ? t(`Estás viendo ${formatMonthLabel(state.activeMonth, lang)}, un mes que aún no llega. Lo que registres con esa fecha aparecerá aquí.`, `You're viewing ${formatMonthLabel(state.activeMonth, lang)}, a month that hasn't arrived yet. Anything dated then will show up here.`)
+              : t(`No hubo movimientos en ${formatMonthLabel(state.activeMonth, lang)}.`, `No transactions in ${formatMonthLabel(state.activeMonth, lang)}.`)}
+          </span>
+          <button type="button" onClick={() => onChangeMonth(realMonth)} className="shrink-0 rounded-full bg-[var(--lime)] px-4 py-1.5 text-xs font-bold text-black transition hover:brightness-95">
+            {t(`Ir a ${formatMonthLabel(realMonth, lang)}`, `Go to ${formatMonthLabel(realMonth, lang)}`)}
+          </button>
+        </div>
+      )}
       <section className="overflow-hidden rounded-3xl border border-white/60 bg-white/35 px-6 py-9 text-center backdrop-blur-xl">
-        <p className="kicker">{t("Remanente disponible", "Available balance")}</p>
+        <p className="kicker">{t("Te queda este mes", "Left this month")}</p>
         <h2 className="serif mt-2 text-[3.25rem] font-bold leading-none tracking-tight md:text-[4.5rem]">{formatMoney(summary.remainder, state.currency)}</h2>
         <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--lime)] bg-[rgba(204,255,0,0.2)] px-4 py-1.5 text-xs font-semibold text-[var(--primary)]">
           <ArrowUpRight className="h-3.5 w-3.5" />
-          {t(`${formatMoney(summary.budgetRemaining, state.currency)} disponibles vs plan`, `${formatMoney(summary.budgetRemaining, state.currency)} available vs plan`)}
+          {summary.income > 0
+            ? t(`Llevas ${formatMoney(summary.income, state.currency)} de ingresos · ${formatMoney(summary.outflow, state.currency)} de gastos`, `${formatMoney(summary.income, state.currency)} income · ${formatMoney(summary.outflow, state.currency)} spent`)
+            : t(`${formatMoney(summary.outflow, state.currency)} en gastos este mes`, `${formatMoney(summary.outflow, state.currency)} spent this month`)}
+        </div>
+        {/* Una sola entrada de captura: registrar es la acción protagonista del Inicio. */}
+        <div className="mt-6 flex justify-center">
+          <button className="inline-flex items-center gap-2 rounded-full bg-[var(--lime)] px-7 py-3 text-base font-bold text-black shadow-lg shadow-lime-300/30 transition hover:-translate-y-0.5" onClick={() => setView("add")} type="button">
+            <Plus className="h-5 w-5" />
+            {t("Registrar gasto o ingreso", "Record expense or income")}
+          </button>
         </div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-12">
+        {/* Insights · en qué se va tu plata (con el detalle real, no solo la categoría). */}
         <Card className="lg:col-span-7">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="kicker">{t("Este mes", "This month")} · {modeLabel(state.mode, t)}</p>
-              <h3 className="serif mt-1 text-xl font-bold">{t("Ingresos y gastos", "Income and expenses")}</h3>
+              <p className="kicker">{formatMonthLabel(state.activeMonth, t("es", "en") as "es" | "en")} · {modeLabel(state.mode, t)}</p>
+              <h3 className="serif mt-1 text-xl font-bold">{t("En qué se va tu plata", "Where your money goes")}</h3>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2">
-              <button className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[var(--primary)] shadow-sm transition hover:bg-white/80" onClick={() => setView("receipt-capture")} type="button">
-                <ReceiptText className="mr-1 inline h-4 w-4" />
-                {t("Capturar recibo", "Capture receipt")}
-              </button>
-              <button className="rounded-full bg-[var(--lime)] px-4 py-2 text-sm font-bold text-black shadow-sm transition hover:brightness-95" onClick={() => setView("add")} type="button">
-                <Plus className="mr-1 inline h-4 w-4" />
-                {t("Añadir", "Add")}
-              </button>
-            </div>
+            <button className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm transition hover:bg-white/80" onClick={() => setView("reports")} type="button">
+              {t("Ver reportes", "Reports")}
+            </button>
           </div>
-          <div className="mt-5 grid grid-cols-2 gap-5">
-            <Metric label={t("Ingresos", "Income")} value={formatMoney(summary.income, state.currency)} tone="good" />
-            <Metric label={t("Gastos", "Expenses")} value={formatMoney(summary.outflow, state.currency)} />
-          </div>
-          <div className="mt-6 space-y-3">
-            <div>
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{t("Ingresos vs plan", "Income vs plan")}</p>
-              <Progress value={summary.income / Math.max(summary.plannedIncome, 1)} />
-            </div>
-            <div>
-              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">{t("Gastos vs plan", "Expenses vs plan")}</p>
-              <Progress value={summary.outflow / Math.max(summary.plannedOutflow, 1)} danger={summary.outflow > summary.plannedOutflow} />
-            </div>
+          <div className="mt-4 space-y-3.5">
+            {topSpending.map((item) => (
+              <div key={item.id}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="truncate font-semibold">{item.name}</span>
+                  <span className="serif shrink-0 text-lg font-bold">{formatMoney(item.spent, state.currency)}</span>
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-soft)]">
+                  <div className="h-full rounded-full bg-[var(--lime)]" style={{ width: `${Math.min(100, Math.round((item.spent / topSpent) * 100))}%` }} />
+                </div>
+                {item.detail && (
+                  <p className="mt-1 truncate text-xs text-slate-500">{item.count > 1 ? t(`${item.count} movs · el mayor: ${item.detail}`, `${item.count} txns · biggest: ${item.detail}`) : item.detail}</p>
+                )}
+              </div>
+            ))}
+            {!topSpending.length && (
+              <EmptyState title={t("Aún no hay gastos", "No expenses yet")} subtitle={t("Registra tus gastos y aquí verás, en lenguaje claro, exactamente en qué se va tu dinero.", "Record your expenses and you'll see here, in plain language, exactly where your money goes.")}>
+                <button className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-black transition hover:brightness-95" onClick={() => setView("add")} type="button">{t("Registrar el primero", "Record the first one")}</button>
+              </EmptyState>
+            )}
           </div>
         </Card>
 
+        {/* Insights · lo que la app nota por ti, en lenguaje claro. */}
         <Card className="lg:col-span-5">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-[var(--danger)]" />
-            <h3 className="serif text-xl font-bold">{t("Categorías en riesgo", "Categories at risk")}</h3>
+            <Sparkles className="h-4 w-4 text-[var(--primary)]" />
+            <h3 className="serif text-xl font-bold">{t("Lo que nota la app", "What the app notices")}</h3>
           </div>
-          <div className="mt-4 space-y-3.5">
-            {risk.map((item) => (
-              <RiskRow key={item.id} name={item.name} ratio={item.ratio} spent={item.spent} planned={item.plannedCents} currency={state.currency} />
+          <div className="mt-4 space-y-2.5">
+            {observations.map((text, index) => (
+              <div className="rounded-2xl bg-white/55 p-4 text-sm font-medium text-slate-700" key={index}>{text}</div>
             ))}
-            {!risk.length && (
-              <EmptyState title={t("Todo en orden", "All on track")} subtitle={t("Las categorías que superen el 75% de su presupuesto aparecerán aquí.", "Categories that exceed 75% of their budget will show up here.")} />
+            {!observations.length && (
+              <EmptyState title={t("Aún sin lecturas", "Nothing to read yet")} subtitle={t("Con unos cuantos movimientos la app empieza a decirte qué es inusual, qué se repite y dónde podrías ajustar.", "With a few transactions the app starts telling you what's unusual, what repeats, and where you could adjust.")} />
             )}
           </div>
         </Card>
@@ -1667,9 +1911,13 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
   const defaultAccount = activeAccounts.find((account) => account.defaultForCapture) ?? activeAccounts[0] ?? state.accounts[0];
   const transferAccount = activeAccounts.find((account) => account.id !== defaultAccount?.id) ?? defaultAccount;
   const today = new Date().toISOString().slice(0, 10);
+  // La fecha del movimiento cae en el mes que estás viendo (no siempre hoy): si navegaste a un
+  // mes pasado/futuro con el selector, lo que registres aparece en ESE mes. `today` se reserva
+  // para datos atados al momento real (p. ej. la fecha de la tasa de cambio).
+  const captureDate = defaultDateForMonth(state.activeMonth);
   const [form, setForm] = useState<NewTransactionInput>({
     type: "expense",
-    date: today,
+    date: captureDate,
     amount: "",
     currency: state.currency,
     exchangeRate: 1,
@@ -1695,7 +1943,13 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
   const otherCurrency = form.currency !== state.currency;
   const currencySymbol = form.currency === "EUR" ? "€" : "$";
   const converted = toCents(form.amount) * form.exchangeRate;
-  const refundableTransactions = transactionsForMonth(state, state.activeMonth).filter((transaction) => transaction.status === "approved" && transaction.type !== "transfer" && transaction.type !== "refund" && categoryById(state.categories, transaction.categoryId)?.group !== "income");
+  // Reembolsos entre meses: un gasto se puede reembolsar aunque sea de otro mes (compraste en
+  // mayo, te devuelven en junio). Listamos los gastos reembolsables de TODOS los meses, los más
+  // recientes primero (el Select muestra la fecha, así que el mes queda claro), acotado a 60.
+  const refundableTransactions = state.transactions
+    .filter((transaction) => transaction.status === "approved" && transaction.type !== "transfer" && transaction.type !== "refund" && categoryById(state.categories, transaction.categoryId)?.group !== "income")
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 60);
   const linkedTransaction = state.transactions.find((transaction) => transaction.id === form.linkedTransactionId);
   const creditAccounts = activeAccounts.filter((account) => account.kind === "credit");
   const categoryOptions = categoriesForCaptureType(state.categories, form.type);
@@ -1739,7 +1993,7 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
       note: "",
       attachmentNames: [],
       needsReview: false,
-      date: today,
+      date: captureDate,
       linkedTransactionId: current.type === "refund" ? current.linkedTransactionId : "",
     }));
   }
@@ -1787,8 +2041,15 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
   const detailsSummary = detailsFilled > 0 ? t(`${detailsFilled} con dato`, `${detailsFilled} set`) : t("Toca para añadir", "Tap to add");
 
   return (
-    <ViewShell title={t("Añadir movimiento", "Add transaction")} eyebrow={t("Captura en segundos", "Capture in seconds")}>
+    <ViewShell title={t("Registrar", "Record")} eyebrow={t("Una sola entrada · elige cómo capturar", "One entry · choose how to capture")}>
       <form className="grid gap-5 pb-2" onSubmit={submit}>
+        {/* Una sola entrada de captura: aquí defines la forma (escribir / IA / recibo) y sigues
+            sin saltar entre pantallas distintas del menú. */}
+        <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[var(--surface-soft)] p-1.5">
+          <span className="rounded-xl bg-[var(--lime)] px-2 py-2.5 text-center text-xs font-bold text-black shadow-sm">{t("Escribir", "Type")}</span>
+          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-white/70" onClick={() => setView("ai")} type="button">{t("Con IA", "With AI")}</button>
+          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-slate-600 transition hover:bg-white/70" onClick={() => setView("receipt-capture")} type="button">{t("Recibo", "Receipt")}</button>
+        </div>
         {/* Primario · Monto + Categoría */}
         <Card>
           {/* Tipo · control compacto */}
@@ -1880,9 +2141,15 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
             )}
           </div>
 
-          {/* Detalles · todo lo secundario, colapsado en un modal */}
+          {/* "¿Qué fue exactamente?" a la vista, no enterrado en un modal: el movimiento se queda
+              con tus palabras, no con el nombre de la categoría. Es justo lo que la hoja vieja perdía. */}
+          <div className="mt-5 border-t border-[var(--line)] pt-5">
+            <Input label={t("¿Qué fue exactamente?", "What was it exactly?")} value={form.description} onChange={(value) => setForm((current) => ({ ...current, description: value }))} placeholder={t("Ej. súper de la semana + pañales en Bravo", "e.g. weekly groceries + diapers at Bravo")} />
+          </div>
+
+          {/* Detalles · todo lo demás (cuenta, fecha, comercio, etiquetas, moneda), colapsado en un modal */}
           <div className="mt-4 grid gap-2.5">
-            <CompactRow label={t("Detalles", "Details")} sublabel={accountName} value={detailsSummary} onClick={() => setShowDetails(true)} />
+            <CompactRow label={t("Más detalles", "More details")} sublabel={accountName} value={detailsSummary} onClick={() => setShowDetails(true)} />
             {lastTransaction && (
               <button className="text-center text-xs font-semibold text-[var(--primary)] transition hover:opacity-70" onClick={useLastTransaction} type="button">{t("↺ Duplicar último", "↺ Duplicate last")} ({lastTransaction.description.slice(0, 22)})</button>
             )}
@@ -1909,7 +2176,6 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
               <input className="field" type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} />
             </label>
             <ComboInput label={t("Subcategoría o detalle", "Subcategory or detail")} value={form.subcategory} options={selectedCategory?.subcategories ?? []} onChange={(value) => setForm((current) => ({ ...current, subcategory: value }))} placeholder={t("Algo específico", "Something specific")} />
-            <Input label={t("Descripción", "Description")} value={form.description} onChange={(value) => setForm((current) => ({ ...current, description: value }))} placeholder={t("Ej. Compra en farmacia", "e.g. Pharmacy purchase")} />
             <Input label={t("Comercio o persona", "Merchant or person")} value={form.merchant} onChange={(value) => setForm((current) => ({ ...current, merchant: value }))} placeholder={t("Ej. Amazon, tienda", "e.g. Amazon, store")} />
             <Input label={t("Etiquetas", "Tags")} value={form.tags} onChange={(value) => setForm((current) => ({ ...current, tags: value }))} placeholder={t("familia, imprevisto", "family, unexpected")} />
             <label className="grid gap-2 text-sm font-semibold">
@@ -2595,9 +2861,13 @@ function ReceiptsView({
 
 function MovementsView({ state, setState, setView }: { state: AppState; setState: Dispatch<SetStateAction<AppState>>; setView: (view: View) => void }) {
   const { t } = useT();
+  const lang = t("es", "en") as "es" | "en";
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
+  // Por defecto Movimientos muestra SOLO el mes activo (el del selector global). El toggle amplía
+  // a todos los meses. Antes listaba todo mezclado e ignoraba el mes.
+  const [showAllMonths, setShowAllMonths] = useState(false);
   const [selectedId, setSelectedId] = useState(state.transactions[0]?.id ?? "");
   const [splitDraft, setSplitDraft] = useState({
     categoryId: state.categories.find((category) => category.group !== "income")?.id ?? state.categories[0]?.id ?? "",
@@ -2617,7 +2887,8 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
     const matchesQuery = !query || needle.includes(query.toLowerCase());
     const matchesStatus = statusFilter === "all" || transaction.status === statusFilter;
     const matchesType = typeFilter === "all" || transaction.type === typeFilter;
-    return matchesQuery && matchesStatus && matchesType;
+    const matchesMonth = showAllMonths || transaction.date.slice(0, 7) === state.activeMonth;
+    return matchesMonth && matchesQuery && matchesStatus && matchesType;
   });
 
   function updateTransaction(id: string, patch: Partial<Transaction>) {
@@ -2891,11 +3162,27 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
   return (
     <ViewShell title={t("Movimientos", "Transactions")} eyebrow={t("Registro auditable", "Auditable record")} description="">
       <Card>
-        <SectionHeader title={t("Actividad del mes", "Activity this month")} action={t("Añadir", "Add")} onAction={() => setView("add")} />
+        <SectionHeader
+          title={showAllMonths
+            ? t("Todos los movimientos", "All transactions")
+            : t(`Movimientos · ${formatMonthLabel(state.activeMonth, lang)}`, `Transactions · ${formatMonthLabel(state.activeMonth, lang)}`)}
+          action={t("Añadir", "Add")}
+          onAction={() => setView("add")}
+        />
         <div className="mt-5 grid gap-3 md:grid-cols-[1fr_0.7fr_0.7fr]">
           <Input label={t("Buscar", "Search")} value={query} onChange={setQuery} placeholder={t("Descripción, comercio, tag o categoría", "Description, merchant, tag or category")} />
           <Select label={t("Estado", "Status")} value={statusFilter} options={["all", "approved", "needs_review", "duplicate", "adjustment"]} render={(value) => value === "all" ? t("Todos", "All") : transactionStatusLabel(value)} onChange={setStatusFilter} />
           <Select label={t("Tipo", "Type")} value={typeFilter} options={["all", "income", "expense", "transfer", "refund", "debt_payment", "saving", "investment"]} render={(value) => value === "all" ? t("Todos", "All") : transactionTypeLabel(value)} onChange={setTypeFilter} />
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-500">
+            {showAllMonths
+              ? t("Mostrando todos los meses", "Showing all months")
+              : t(`Mostrando ${formatMonthLabel(state.activeMonth, lang)}`, `Showing ${formatMonthLabel(state.activeMonth, lang)}`)}
+          </span>
+          <button type="button" onClick={() => setShowAllMonths((value) => !value)} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 font-semibold text-[var(--primary)] transition hover:bg-white/70">
+            {showAllMonths ? t("Ver solo este mes", "Only this month") : t("Ver todos los meses", "All months")}
+          </button>
         </div>
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_420px]">
           <div className="divide-y divide-[var(--line)]">
@@ -5419,7 +5706,10 @@ function ReportsView({
   const [accountsModalOpen, setAccountsModalOpen] = useState(false);
   const [closingDraftState, setClosingDraft] = useState(() => emptyClosingDraft(state.activeMonth));
   const closingDraft = closingDraftState.month === state.activeMonth ? closingDraftState : emptyClosingDraft(state.activeMonth);
-  const year = state.activeMonth.slice(0, 4);
+  // Año de la lectura anual, navegable de forma independiente (el cierre mensual sigue usando
+  // state.activeMonth). Arranca en el año del mes activo.
+  const [selectedYear, setSelectedYear] = useState(state.activeMonth.slice(0, 4));
+  const year = selectedYear;
   const monthlyTransactions = useMemo(() => transactionsForMonth(state, state.activeMonth), [state]);
   const approvedMonthlyTransactions = useMemo(() => monthlyTransactions.filter((transaction) => transaction.status === "approved"), [monthlyTransactions]);
   const nextMonth = nextMonthKey(state.activeMonth);
@@ -5922,7 +6212,18 @@ function ReportsView({
 
       {reportMode === "year" && (
         <Card>
-          <h3 className="serif text-xl font-bold">{t("Lectura anual", "Annual overview")} {year}</h3>
+          <div className="flex items-center justify-between gap-3">
+            <h3 className="serif text-xl font-bold">{t("Lectura anual", "Annual overview")}</h3>
+            <div className="flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-white/70 px-1 py-1">
+              <button type="button" aria-label={t("Año anterior", "Previous year")} onClick={() => setSelectedYear(String(Number(year) - 1))} className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white">
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="px-2 text-sm font-bold text-[var(--primary)]">{year}</span>
+              <button type="button" aria-label={t("Año siguiente", "Next year")} onClick={() => setSelectedYear(String(Number(year) + 1))} className="grid h-7 w-7 place-items-center rounded-full text-slate-600 transition hover:bg-white">
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
           <div className="mt-5 overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead className="text-xs uppercase tracking-[0.16em] text-slate-500">
