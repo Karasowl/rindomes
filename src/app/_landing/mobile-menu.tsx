@@ -38,7 +38,7 @@ export function MobileMenu({ open, links, onClose }: { open: boolean; links: Nav
       >
         <div className="flex items-center justify-between px-6 py-5">
           <Logo />
-          <button onClick={onClose} type="button" aria-label="Cerrar menú" className="rounded-full p-2 transition-opacity hover:opacity-70">
+          <button onClick={onClose} type="button" aria-label="Cerrar menú" className="rounded-full p-2 transition-opacity hover:opacity-80">
             <X color="#1d1b1a" />
           </button>
         </div>
@@ -51,7 +51,7 @@ export function MobileMenu({ open, links, onClose }: { open: boolean; links: Nav
               key={link.href}
               href={link.href}
               onClick={onClose}
-              className="py-3 text-2xl font-medium hover:opacity-60"
+              className="py-3 text-2xl font-medium hover:opacity-80"
               style={{
                 color: "#1d1b1a",
                 opacity: open ? 1 : 0,

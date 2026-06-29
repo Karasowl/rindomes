@@ -50,14 +50,14 @@ export function MembersPanel() {
       <p className="mt-1 text-sm text-[var(--text-muted)]">{t("Invita a tu familia para que accedan juntos.", "Invite your family so you can manage finances together.")}</p>
       <form className="mt-4 space-y-3" onSubmit={handleInvite}>
         <div className="flex flex-col gap-2 md:flex-row">
-          <input className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-4 py-2.5 text-sm outline-none focus:border-[var(--primary)]" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t("email@familia.com", "email@family.com")} type="email" required />
+          <input className="field min-w-0 flex-1 text-sm" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t("email@familia.com", "email@family.com")} type="email" required />
           <button className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-black" type="submit">{t("Invitar", "Invite")}</button>
         </div>
         <details className="text-sm">
           <summary className="cursor-pointer select-none text-[var(--text-muted)] hover:text-[var(--primary)]">
             {t("Permiso", "Permission")}: {roleLabel(role)}
           </summary>
-          <select className="mt-2 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm md:w-auto" value={role} onChange={(event) => setRole(event.target.value as "editor" | "viewer")} aria-label={t("Permiso del miembro", "Member permission")}>
+          <select className="mt-2 w-full rounded-xl border border-[rgba(18,20,20,0.46)] bg-white px-3 py-2.5 text-sm hover:border-[rgba(18,20,20,0.56)] md:w-auto" value={role} onChange={(event) => setRole(event.target.value as "editor" | "viewer")} aria-label={t("Permiso del miembro", "Member permission")}>
             <option value="editor">{roleLabel("editor")}</option>
             <option value="viewer">{roleLabel("viewer")}</option>
           </select>

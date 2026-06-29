@@ -44,11 +44,14 @@ export function Landing() {
               poster="/hero-poster.jpg"
               src="/hero-loop.mp4"
             />
+            {/* Overlay crema sobre el video. Reforzado en la franja izquierda (donde vive el
+                texto del hero) para garantizar contraste del titular incluso en frames más
+                oscuros del video; sigue revelando el video hacia la derecha. */}
             <div
               className="absolute inset-0"
               style={{
                 background:
-                  "linear-gradient(100deg, rgba(254,248,245,0.92) 0%, rgba(254,248,245,0.58) 40%, rgba(254,248,245,0.14) 72%, rgba(254,248,245,0.04) 100%)",
+                  "linear-gradient(100deg, rgba(254,248,245,0.95) 0%, rgba(254,248,245,0.80) 42%, rgba(254,248,245,0.24) 72%, rgba(254,248,245,0.04) 100%)",
               }}
             />
           </div>
@@ -127,7 +130,7 @@ export function Landing() {
                 </Link>
               </div>
               {/* Pro */}
-              <div className="rounded-[1.75rem] border-2 border-[var(--lime)] bg-[rgba(204,255,0,0.1)] p-8">
+              <div className="rounded-[1.75rem] border-2 border-[var(--primary)] bg-[rgba(204,255,0,0.1)] p-8">
                 <span className="mb-3 inline-block rounded-full bg-[var(--lime)] px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-black">Recomendado</span>
                 <h3 className="serif text-2xl font-bold">Pro</h3>
                 <p className="mt-1 text-[var(--text-muted)]">Cuando quieres que la IA haga el trabajo pesado.</p>

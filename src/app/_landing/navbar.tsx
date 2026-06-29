@@ -27,7 +27,7 @@ export function Navbar() {
         {/* Centro (solo desktop): links a secciones */}
         <nav className="hidden items-center gap-8 md:flex">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="text-sm font-medium transition-opacity hover:opacity-60" style={{ color: "#1d1b1a" }}>
+            <a key={link.href} href={link.href} className="text-sm font-medium transition-colors hover:text-[var(--text-muted)]" style={{ color: "#1d1b1a" }}>
               {link.label}
             </a>
           ))}
@@ -44,7 +44,7 @@ export function Navbar() {
         </div>
 
         {/* Móvil: hamburguesa */}
-        <button className="rounded-full p-2 transition-opacity hover:opacity-70 md:hidden" onClick={() => setMenuOpen(true)} type="button" aria-label="Abrir menú">
+        <button className="rounded-full p-2 transition-colors hover:bg-[var(--surface-muted)] md:hidden" onClick={() => setMenuOpen(true)} type="button" aria-label="Abrir menú">
           <Menu color="#1d1b1a" />
         </button>
       </div>

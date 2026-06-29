@@ -276,7 +276,7 @@ export function ReceiptCaptureView({
               className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed p-8 text-center transition ${
                 isDragging
                   ? "border-[var(--primary)] bg-white ring-2 ring-[var(--lime)]"
-                  : "border-[var(--line)] bg-white/55 hover:border-[var(--primary)] hover:bg-white"
+                  : "border-[rgba(18,20,20,0.46)] bg-white/55 hover:border-[var(--primary)] hover:bg-white"
               }`}
               onDragEnter={(event) => {
                 event.preventDefault();
@@ -310,7 +310,7 @@ export function ReceiptCaptureView({
             </label>
 
             <button
-              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[var(--line)] bg-white/55 p-8 text-center transition hover:border-[var(--primary)] hover:bg-white"
+              className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-[rgba(18,20,20,0.46)] bg-white/55 p-8 text-center transition hover:border-[var(--primary)] hover:bg-white"
               onClick={() => setStage("camera")}
               type="button"
             >
@@ -893,7 +893,7 @@ export function ReceiptReviewView({
                 <button
                   type="button"
                   onClick={saveAlias}
-                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[var(--line)] bg-white/70 px-2.5 py-1 text-xs font-semibold text-[var(--primary)] transition hover:bg-white"
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border border-[rgba(18,20,20,0.46)] bg-white/70 px-2.5 py-1 text-xs font-semibold text-[var(--primary)] transition hover:bg-white"
                 >
                   <Tag className="h-3.5 w-3.5" /> {t("Guardar apodo", "Save nickname")} «{editedMerchant}»
                 </button>
@@ -955,7 +955,7 @@ export function ReceiptReviewView({
 
       <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-[1fr_auto]">
         <button
-          className="rounded-2xl bg-[var(--lime)] px-6 py-3.5 text-base font-bold text-black shadow-lg shadow-lime-300/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-2xl bg-[var(--lime)] px-6 py-3.5 text-base font-bold text-black shadow-lg shadow-lime-300/30 transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-70"
           disabled={!canApprove || saving}
           onClick={approve}
           type="button"
@@ -963,7 +963,7 @@ export function ReceiptReviewView({
           {saving ? t("Guardando…", "Saving…") : t("Aprobar y guardar", "Approve and save")}
         </button>
         <button
-          className="rounded-2xl border border-[var(--line)] bg-white px-6 py-3.5 text-base font-bold text-[var(--text-muted)] transition hover:-translate-y-0.5"
+          className="rounded-2xl border border-[rgba(18,20,20,0.46)] bg-white px-6 py-3.5 text-base font-bold text-[var(--text-muted)] transition hover:-translate-y-0.5"
           onClick={onCancel}
           type="button"
         >
@@ -1216,7 +1216,7 @@ function LineItemsEditor({
                 type="button"
                 onClick={() => onRemove(row.key)}
                 aria-label={t("Quitar producto", "Remove item")}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-[var(--line)] bg-white text-[var(--text-subtle)] transition hover:border-[rgba(186,26,26,0.4)] hover:text-[var(--danger)]"
+                className="grid h-9 w-9 place-items-center rounded-xl border border-[rgba(18,20,20,0.46)] bg-white text-[var(--text-subtle)] transition hover:border-[var(--danger)] hover:text-[var(--danger)]"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

@@ -72,7 +72,7 @@ export function PaywallView({
           </p>
         </div>
         <button
-          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] transition hover:bg-white"
+          className="inline-flex shrink-0 items-center gap-2 rounded-2xl border divider-strong bg-white/70 px-4 py-2.5 text-sm font-semibold text-[var(--text-muted)] transition hover:bg-white"
           onClick={() => setView("home")}
           type="button"
         >
@@ -111,7 +111,7 @@ export function PaywallView({
           {!isPro && (
             <div className="mt-6">
               <button
-                className="w-full rounded-2xl bg-[var(--lime)] px-6 py-3.5 text-base font-bold text-black shadow-lg shadow-lime-300/30 transition hover:-translate-y-0.5 disabled:opacity-50"
+                className="w-full rounded-2xl bg-[var(--lime)] px-6 py-3.5 text-base font-bold text-black shadow-lg shadow-lime-300/30 transition hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed"
                 disabled={checking}
                 onClick={() => void handleCheckout()}
                 type="button"
@@ -152,7 +152,7 @@ export function PaywallView({
           </ul>
           <div className="mt-6">
             <button
-              className="w-full rounded-2xl border border-[var(--line)] bg-white px-6 py-3.5 text-base font-bold text-[var(--primary)] transition hover:-translate-y-0.5"
+              className="w-full rounded-2xl border divider-strong bg-white px-6 py-3.5 text-base font-bold text-[var(--primary)] transition hover:-translate-y-0.5"
               onClick={onContinueManual}
               type="button"
             >

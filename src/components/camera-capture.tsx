@@ -253,7 +253,7 @@ export function CameraCapture({ onCapture, onCancel }: { onCapture: (file: File)
               {t("Usar esta foto", "Use this photo")}
             </button>
             <button
-              className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white px-6 py-3.5 text-base font-bold text-[var(--primary)] transition hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-2xl border divider-strong bg-white px-6 py-3.5 text-base font-bold text-[var(--primary)] transition hover:-translate-y-0.5"
               onClick={retake}
               type="button"
             >
@@ -263,7 +263,7 @@ export function CameraCapture({ onCapture, onCancel }: { onCapture: (file: File)
         )}
         {onCancel && (
           <button
-            className="inline-flex items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/70 px-6 py-3.5 text-base font-semibold text-[var(--text-muted)] transition hover:bg-white"
+            className="inline-flex items-center gap-2 rounded-2xl border divider-strong bg-white/70 px-6 py-3.5 text-base font-semibold text-[var(--text-muted)] transition hover:bg-white"
             onClick={() => {
               stopStream();
               onCancel();

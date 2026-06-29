@@ -122,7 +122,7 @@ export function Onboarding({
             {[0, 1, 2].map((index) => (
               <span
                 key={index}
-                className={`h-1.5 flex-1 rounded-full transition ${index <= step ? "bg-[var(--lime)]" : "bg-black/10"}`}
+                className={`h-1.5 flex-1 rounded-full transition ${index <= step ? "bg-[var(--lime)]" : "bg-[var(--surface-muted)]"}`}
               />
             ))}
           </div>
@@ -141,7 +141,7 @@ export function Onboarding({
                 const active = mode === option.mode;
                 return (
                   <button
-                    className={`w-full rounded-3xl border p-5 text-left transition ${active ? "border-[var(--lime)] bg-[rgba(204,255,0,0.12)] shadow-sm" : "border-white/70 bg-white/55 hover:bg-white/80"}`}
+                    className={`w-full rounded-3xl border p-5 text-left transition ${active ? "border-[var(--lime)] bg-[rgba(204,255,0,0.12)] shadow-sm" : "border-[var(--line)] bg-white/55 hover:bg-white/80"}`}
                     key={option.mode}
                     onClick={() => setMode(option.mode)}
                     type="button"
@@ -208,9 +208,9 @@ export function Onboarding({
                 {expenses.map((expense, index) => (
                   <div className="flex items-center gap-2" key={index}>
                     <input className="field min-w-0 flex-1" value={expense.name} onChange={(event) => updateExpense(setExpenses, index, { name: event.target.value })} placeholder={t("Concepto", "Description")} />
-                    <div className="flex w-32 shrink-0 items-center rounded-[0.875rem] border border-black/10 bg-white px-2">
+                    <div className="flex w-32 shrink-0 items-center rounded-[0.875rem] border border-black/[0.46] bg-white px-2">
                       <span className="text-sm text-[var(--text-subtle)]">$</span>
-                      <input className="w-full bg-transparent px-1 py-2 text-sm outline-none" value={expense.amount} onChange={(event) => updateExpense(setExpenses, index, { amount: event.target.value })} placeholder="0" inputMode="decimal" />
+                      <input className="w-full bg-transparent px-1 py-2 text-sm" value={expense.amount} onChange={(event) => updateExpense(setExpenses, index, { amount: event.target.value })} placeholder="0" inputMode="decimal" />
                     </div>
                     <button className="text-[var(--text-subtle)] hover:text-[var(--danger)]" onClick={() => setExpenses((current) => current.filter((_, i) => i !== index))} type="button" aria-label={t("Quitar", "Remove")}><Trash2 className="h-4 w-4" /></button>
                   </div>
@@ -231,7 +231,7 @@ export function Onboarding({
                 <span className="font-bold text-[var(--danger)]">-{formatMoney(totalFixed, currency)}</span>
               </div>
               <p className="kicker mt-4">{t("Remanente disponible", "Available remainder")}</p>
-              <p className={`serif text-4xl font-bold ${remainder < 0 ? "text-[var(--danger)]" : ""}`}>{formatMoney(remainder, currency)}</p>
+              <p className={`serif text-4xl font-bold ${remainder < 0 ? "text-[var(--danger)]" : "text-[var(--foreground)]"}`}>{formatMoney(remainder, currency)}</p>
             </div>
 
             <StepNav onBack={() => setStep(0)} onNext={() => setStep(2)} />
@@ -254,7 +254,7 @@ export function Onboarding({
                   <div className="rounded-3xl border border-white/70 bg-white/55 p-4" key={index}>
                     <div className="flex items-center gap-3">
                       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[var(--surface-soft)] text-[var(--primary)]"><Icon className="h-5 w-5" /></span>
-                      <input className="min-w-0 flex-1 border-b border-black/15 bg-transparent py-1 font-semibold outline-none" value={account.name} onChange={(event) => updateAccount(setAccounts, index, { name: event.target.value })} placeholder={t("Nombre de la cuenta", "Account name")} />
+                      <input className="min-w-0 flex-1 border-b border-black/[0.46] bg-transparent py-1 font-semibold" value={account.name} onChange={(event) => updateAccount(setAccounts, index, { name: event.target.value })} placeholder={t("Nombre de la cuenta", "Account name")} />
                       {accounts.length > 1 && (
                         <button className="text-[var(--text-subtle)] hover:text-[var(--danger)]" onClick={() => setAccounts((current) => current.filter((_, i) => i !== index))} type="button" aria-label={t("Quitar", "Remove")}><Trash2 className="h-4 w-4" /></button>
                       )}
@@ -262,19 +262,19 @@ export function Onboarding({
                     <div className="mt-3 grid grid-cols-2 gap-3">
                       <label className="text-xs font-semibold text-[var(--text-muted)]">
                         {t("Tipo", "Type")}
-                        <select className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2 py-2 text-sm" value={account.kind} onChange={(event) => updateAccount(setAccounts, index, { kind: event.target.value as Account["kind"] })}>
+                        <select className="mt-1 w-full rounded-lg border border-black/[0.46] bg-white px-2 py-2 text-sm" value={account.kind} onChange={(event) => updateAccount(setAccounts, index, { kind: event.target.value as Account["kind"] })}>
                           {ACCOUNT_KINDS.map((option) => <option key={option.kind} value={option.kind}>{accountKindLabel(option.kind)}</option>)}
                         </select>
                       </label>
                       <label className="text-xs font-semibold text-[var(--text-muted)]">
                         {t("Saldo actual", "Current balance")}
-                        <input className="mt-1 w-full rounded-lg border border-black/10 bg-white px-2 py-2 text-sm" value={account.balance} onChange={(event) => updateAccount(setAccounts, index, { balance: event.target.value })} placeholder="0.00" inputMode="decimal" />
+                        <input className="mt-1 w-full rounded-lg border border-black/[0.46] bg-white px-2 py-2 text-sm" value={account.balance} onChange={(event) => updateAccount(setAccounts, index, { balance: event.target.value })} placeholder="0.00" inputMode="decimal" />
                       </label>
                     </div>
                   </div>
                 );
               })}
-              <button className="flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-black/20 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-white/50" onClick={() => setAccounts((current) => [...current, { name: "", kind: "bank", balance: "" }])} type="button">
+              <button className="flex w-full items-center justify-center gap-2 rounded-3xl border border-dashed border-black/[0.46] py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-white/50" onClick={() => setAccounts((current) => [...current, { name: "", kind: "bank", balance: "" }])} type="button">
                 <Plus className="h-4 w-4" /> {t("Añadir otra cuenta", "Add another account")}
               </button>
             </div>
@@ -306,8 +306,8 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 function MoneyInput({ currency, value, onChange }: { currency: CurrencyCode; value: string; onChange: (value: string) => void }) {
   return (
     <div className="flex items-center gap-2 border-b-2 border-[var(--ink)] py-2">
-      <span className="serif text-2xl font-bold text-[var(--text-subtle)]">{currency === "EUR" ? "€" : "$"}</span>
-      <input className="w-full bg-transparent text-2xl font-semibold outline-none" value={value} onChange={(event) => onChange(event.target.value)} placeholder="0.00" inputMode="decimal" />
+      <span className="serif text-2xl font-bold text-[var(--text-muted)]">{currency === "EUR" ? "€" : "$"}</span>
+      <input className="w-full bg-transparent text-2xl font-semibold" value={value} onChange={(event) => onChange(event.target.value)} placeholder="0.00" inputMode="decimal" />
     </div>
   );
 }
@@ -316,7 +316,7 @@ function StepNav({ onBack, onNext }: { onBack: () => void; onNext: () => void })
   const { t } = useT();
   return (
     <div className="mt-auto flex items-center gap-3 pt-8">
-      <button className="rounded-full border border-black/15 px-5 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-white/50" onClick={onBack} type="button">{t("Atrás", "Back")}</button>
+      <button className="rounded-full border border-black/[0.46] px-5 py-3 text-sm font-semibold text-[var(--text-muted)] hover:bg-white/50" onClick={onBack} type="button">{t("Atrás", "Back")}</button>
       <button className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-[var(--lime)] px-6 py-3 text-base font-bold text-black transition hover:brightness-95" onClick={onNext} type="button">
         {t("Continuar", "Continue")} <ArrowRight className="h-5 w-5" />
       </button>

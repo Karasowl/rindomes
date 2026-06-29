@@ -76,7 +76,7 @@ export function AuthPanel() {
           )}
         </p>
         <button
-          className="mt-4 rounded-full border border-[var(--line)] bg-white px-4 py-2 text-sm font-bold text-[var(--danger)]"
+          className="mt-4 rounded-full border border-[var(--line-strong)] bg-white px-4 py-2 text-sm font-bold text-[var(--danger)]"
           onClick={() => void signOut()}
           type="button"
         >
@@ -175,7 +175,7 @@ export function AuthPanel() {
         </p>
         <div className="mt-4">
           <input
-            className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.4em] outline-none focus:border-[var(--primary)]"
+            className="w-full rounded-xl border border-[rgba(18,20,20,0.46)] bg-white px-4 py-3 text-center text-lg font-semibold tracking-[0.4em] focus:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 placeholder:text-[rgba(18,20,20,0.62)]"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
             inputMode="numeric"
@@ -231,7 +231,7 @@ export function AuthPanel() {
       </p>
       <div className="mt-4 space-y-3">
         <input
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]"
+          className="w-full rounded-xl border border-[rgba(18,20,20,0.46)] bg-white px-4 py-3 text-sm focus:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 placeholder:text-[rgba(18,20,20,0.62)]"
           name="email"
           type="email"
           value={email}
@@ -241,7 +241,7 @@ export function AuthPanel() {
           autoComplete="email"
         />
         <input
-          className="w-full rounded-xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-[var(--primary)]"
+          className="w-full rounded-xl border border-[rgba(18,20,20,0.46)] bg-white px-4 py-3 text-sm focus:border-[var(--primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--primary)] focus-visible:ring-offset-2 placeholder:text-[rgba(18,20,20,0.62)]"
           name="password"
           type="password"
           value={password}

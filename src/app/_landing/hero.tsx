@@ -25,9 +25,9 @@ export function Hero() {
           marginBottom: 22,
         }}
       >
-        <Zap size={28} color="#506600" style={inlineIcon} /> Registra en segundos.{" "}
-        <Sparkles size={28} color="#506600" style={inlineIcon} /> Entiende en qué se va tu{" "}
-        <ReceiptText size={28} color="#506600" style={inlineIcon} /> plata.
+        <Zap size={28} color="#1d1b1a" style={inlineIcon} /> Registra en segundos.{" "}
+        <Sparkles size={28} color="#1d1b1a" style={inlineIcon} /> Entiende en qué se va tu{" "}
+        <ReceiptText size={28} color="#1d1b1a" style={inlineIcon} /> plata.
       </h1>
 
       {/* Subtexto · el fade corre en el wrapper; el <p> conserva su opacidad de reposo 0.82 (delay 0.15s) */}
@@ -36,7 +36,7 @@ export function Hero() {
           style={{
             fontSize: "clamp(0.95rem, 2.5vw, 1.15rem)",
             lineHeight: 1.65,
-            opacity: 0.82,
+            opacity: 0.92,
             maxWidth: 560,
             color: "#1d1b1a",
           }}
