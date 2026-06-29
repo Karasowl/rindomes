@@ -1,0 +1,130 @@
+===============================================================================
+  RINDOMES — CÓMO CONTINUAR EN OTRA PC (arranque desde cero)
+===============================================================================
+  Este archivo vive DENTRO del repo, así que viaja contigo al clonar.
+  Repo: https://github.com/Karasowl/rindomes  (PÚBLICO — ojo con secretos)
+  Última actualización: 2026-06-29
+===============================================================================
+
+
+0) QUÉ ES Y DÓNDE QUEDA
+-------------------------------------------------------------------------------
+  - App de presupuesto familiar/personal por mes. Stack:
+        Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 4
+        Backend: Convex.  Importación de plantillas: ExcelJS.
+  - En la PC vieja el código estaba anidado en:
+        C:\dev\app-finanzas-hogar\app\rindomes
+    Pero al CLONAR el repo en la PC nueva queda simplemente como:  rindomes/
+    (la anidación "app-finanzas-hogar/app/" era solo de esa máquina).
+
+
+1) REQUISITOS EN LA PC NUEVA
+-------------------------------------------------------------------------------
+  - Git
+  - Node.js  (en la PC vieja: v24.7.0; Next 16 exige Node >= 18.18, 20+ ideal)
+  - npm      (en la PC vieja: 11.5.1)
+  - Cuenta de Convex con acceso al team "ismael-lsg" / proyecto "rindomes"
+    (el mismo correo con el que creaste el backend). Necesaria para `convex dev`.
+  - (Opcional) Cuenta de Vercel para desplegar.
+
+
+2) ARRANQUE LOCAL (pasos en orden)
+-------------------------------------------------------------------------------
+  git clone https://github.com/Karasowl/rindomes.git
+  cd rindomes
+  npm install
+
+  # Conecta el backend Convex (abre el navegador para login la 1ª vez).
+  # Elige el proyecto EXISTENTE "rindomes" / deployment de desarrollo.
+  # Esto regenera convex/_generated y ESCRIBE solo NEXT_PUBLIC_CONVEX_URL
+  # dentro de .env.local automáticamente.
+  npx convex dev          # déjalo corriendo en su propia terminal
+
+  # En OTRA terminal, levanta el front:
+  npm run dev             # -> http://localhost:3000
+
+  Si "npx convex dev" no autocompleta el .env.local, créalo a mano con la
+  plantilla del punto 3.
+
+
+3) .env.local  (NO está en git — hay que recrearlo)
+-------------------------------------------------------------------------------
+  El archivo .env.local está ignorado por .gitignore (correcto: el repo es
+  público y no debe contener claves). Plantilla mínima para que la app corra:
+
+      CONVEX_DEPLOYMENT=dev:<tu-deployment-dev>
+      NEXT_PUBLIC_CONVEX_URL=https://<tu-deployment-dev>.convex.cloud
+      NEXT_PUBLIC_CONVEX_SITE_URL=https://<tu-deployment-dev>.convex.site
+
+  - Los valores de <tu-deployment-dev> los autoconfigura `npx convex dev`,
+    o los copias del .env.local de tu PC vieja, o del dashboard de Convex
+    (Project Settings -> URL & Deploy Key).
+  - .env.example (sí está en el repo) documenta TODAS las variables.
+
+  CLAVES SECRETAS / OPCIONALES  (la app FUNCIONA sin ninguna — es manual-first):
+  -----------------------------------------------------------------------------
+  Recupéralas de tu gestor de contraseñas (Bitwarden), NO las pegues en el repo.
+
+  a) IA de texto del lado Next (BYOK, ruta /api/ai/capture) -> en .env.local:
+        OPENAI_API_KEY=...           (sin ella: cae al clasificador local)
+        OPENAI_MODEL=gpt-5-mini      (opcional, default razonable)
+
+  b) Variables que viven en el ENTORNO DE CONVEX, no en .env.local.
+     Se setean con:   npx convex env set NOMBRE valor
+        OPENROUTER_API_KEY=...    (visión de recibos; sin ella -> heurística local)
+        OPENROUTER_MODEL=...      (opcional; default google/gemini-2.0-flash-001)
+        RESEND_API_KEY=...        (OTP por email; necesita también AUTH_EMAIL_FROM)
+        AUTH_EMAIL_FROM="RindoMes <noreply@tudominio.com>"
+        RINDOMES_ALLOW_TEST_GRANTS=true   (solo pruebas: otorgar Pro a mano)
+     Sin OTP, el login degrada a solo-contraseña (sigue funcionando).
+
+
+4) ARCHIVOS QUE EL REPO NO TRAE (pásalos por USB / Drive)
+-------------------------------------------------------------------------------
+  El repo es PÚBLICO, así que estos NO se subieron a git:
+  - .env.local                         -> recrear con el punto 3
+  - proyecto/PRD Maestro v1.0 — RindoMes.pdf
+  - proyecto/ISMA 2025_ Presupuesto + Tracker Patrimonio Neto (1).xlsx
+        ^ contiene DATOS FINANCIEROS PERSONALES — nunca subir a un repo público.
+  - app/design-reference/  (DESIGN.md + referencias de Stitch)
+  Estas tres últimas eran hermanas del repo en la PC vieja, fuera de git.
+  No son necesarias para que la app CORRA, pero sí útiles como referencia.
+
+
+5) DESPLIEGUE (Vercel + Convex) — referencia
+-------------------------------------------------------------------------------
+  - Proyecto Vercel: "rindomes".
+  - vercel.json ya define el build como:
+        npx convex deploy --cmd 'npm run build'
+    => cada deploy de Vercel TAMBIÉN despliega Convex a producción. No hay
+       paso manual de "deploy de Convex" por separado.
+  - La CONVEX_DEPLOY_KEY de producción vive en las Environment Variables de
+    Vercel (no en tu .env.local). Para desarrollo local NO la necesitas.
+  - Deploy manual desde la CLI:  vercel  (o  vercel --prod).
+
+
+6) COMANDOS ÚTILES
+-------------------------------------------------------------------------------
+  npm run dev           Front en local (http://localhost:3000)
+  npm run convex:dev    Backend Convex en modo dev (deja corriendo)
+  npm run build         Build de producción (next build --webpack)
+  npm run typecheck     tsc --noEmit
+  npm run lint          ESLint
+  npm run test          Vitest (una pasada)   |  npm run test:watch
+  npm run convex:deploy Desplegar Convex (normalmente lo hace Vercel)
+
+
+7) OJO AL TRABAJAR CÓDIGO (ver AGENTS.md)
+-------------------------------------------------------------------------------
+  Este Next.js (16) tiene breaking changes respecto a versiones previas. Antes
+  de escribir código nuevo, consulta las guías en:
+        node_modules/next/dist/docs/
+  y respeta los avisos de deprecación.
+
+
+8) ESTADO AL SUBIR (2026-06-29)
+-------------------------------------------------------------------------------
+  Se subió trabajo EN PROGRESO (posiblemente incompleto): ajustes de landing,
+  contraste/tokens en globals.css y varios componentes. Rama: main.
+  Revisa  `git log -3`  y  `git status`  al bajar para ubicarte.
+===============================================================================
