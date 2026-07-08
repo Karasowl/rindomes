@@ -109,6 +109,11 @@ button:not(:disabled):active {
   font-family: var(--font-libre-caslon), Georgia, "Times New Roman", serif;
 }
 
+.amount {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
 .app-scrollbar::-webkit-scrollbar {
   width: 10px;
   height: 10px;

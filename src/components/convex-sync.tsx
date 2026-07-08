@@ -101,6 +101,7 @@ export function ConvexSync({
   const skipNextSaveRef = useRef(false);
   const suppressEchoUntilRef = useRef(0);
   const saveTimerRef = useRef<number | null>(null);
+  const saveInFlightRef = useRef(false);
   // Stable refs so the persistence effect below never re-runs (= never re-saves) just because
   // the language or the toast callback identity changed.
   const notifyRef = useRef(notify);
@@ -216,7 +217,15 @@ export function ConvexSync({
     const canWrite = householdId ? hydratedRef.current : (onboardingCompleted || isAuthenticated);
     if (!canWrite) return;
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = window.setTimeout(() => {
+    saveTimerRef.current = window.setTimeout(function fire() {
+      // Serialize saves: a snapshot in flight still carries the PREVIOUS version, so firing a
+      // second one before it resolves self-conflicts (baseVersion goes stale the moment the
+      // first save bumps the household version). One client must never race itself.
+      if (saveInFlightRef.current) {
+        saveTimerRef.current = window.setTimeout(fire, 300);
+        return;
+      }
+      saveInFlightRef.current = true;
       void (async () => {
         try {
           setSyncStatus("saving");
@@ -242,6 +251,8 @@ export function ConvexSync({
         } catch {
           // Keep the local copy; the next change retries.
           setSyncStatus("offline_error");
+        } finally {
+          saveInFlightRef.current = false;
         }
       })();
     }, 1200);

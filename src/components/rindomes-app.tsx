@@ -436,6 +436,8 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
   const [viewHistory, setViewHistory] = useState<View[]>([]);
   const [localStateReady, setLocalStateReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [onboardingRelaunched, setOnboardingRelaunched] = useState(false);
+  const [addInitialType, setAddInitialType] = useState<TransactionType>("expense");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // The active cloud household, lifted out of ConvexSync via onHouseholdId. It is the seam
@@ -483,11 +485,13 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
   );
 
   // App-level navigation with a back stack so nested flows always have a way back.
-  function navigate(next: View) {
+  function navigate(next: View, options?: { initialType?: TransactionType }) {
     if (next === "setup") {
+      setOnboardingRelaunched(true);
       setShowOnboarding(true); // "Primer mes" opens the guided wizard full-screen
       return;
     }
+    if (next === "add") setAddInitialType(options?.initialType ?? "expense");
     if (next !== view) setViewHistory((stack) => [...stack, view].slice(-30));
     setView(next);
   }
@@ -504,6 +508,9 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
   // In cloud mode a user only reaches AppShell after real Convex Auth, so they are a
   // signed-in owner and may edit — the local user.status pseudo-session no longer gates it.
   const canEdit = authed || canEditWorkspace(state);
+  // createEmptyState scaffolds zero-amount plans for the starter categories, so bare
+  // monthlyPlans.length would flag a pristine account as "has data" and scare-warn on setup.
+  const hasExistingSetupData = state.transactions.length > 0 || state.monthlyPlans.some((plan) => plan.plannedCents > 0);
 
   // Whether the paid AI capture is actually usable. The server query is authoritative when
   // present; otherwise we fall back to the local advisory gate. We also need a real cloud
@@ -547,12 +554,14 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
     window.localStorage.setItem("rindomes.onboarded", "1");
     setState(next);
     setShowOnboarding(false);
+    setOnboardingRelaunched(false);
     setView("home");
   }
 
   function skipOnboarding() {
     window.localStorage.setItem("rindomes.onboarded", "skip");
     setShowOnboarding(false);
+    setOnboardingRelaunched(false);
     setView("home");
   }
 
@@ -685,6 +694,7 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
     window.localStorage.removeItem("rindomes.onboarded");
     setState(createEmptyState(state.currency));
     setView("home");
+    setOnboardingRelaunched(false);
     setShowOnboarding(true);
   }
 
@@ -695,6 +705,13 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
         activeMonth={state.activeMonth}
         onComplete={completeOnboarding}
         onSkip={skipOnboarding}
+        relaunched={onboardingRelaunched}
+        hasExistingData={hasExistingSetupData}
+        onExit={() => {
+          setShowOnboarding(false);
+          setOnboardingRelaunched(false);
+          setView("home");
+        }}
       />
     );
   }
@@ -708,7 +725,10 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
             setState={setState}
             ready={localStateReady}
             canEdit={canEdit}
-            onNeedsOnboarding={() => setShowOnboarding(true)}
+            onNeedsOnboarding={() => {
+              setOnboardingRelaunched(false);
+              setShowOnboarding(true);
+            }}
             onHouseholdId={setHouseholdId}
             notify={notify}
           />
@@ -761,11 +781,11 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
               {t(`Vista de solo lectura para ${currentMember.name}. Puedes consultar y exportar, pero no cambiar datos financieros.`, `Read-only view for ${currentMember.name}. You can browse and export, but not change financial data.`)}
             </div>
           )}
-          {view === "home" && <HomeView state={state} summary={summary} usage={usage} setView={navigate} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />}
+          {view === "home" && <HomeView state={state} summary={summary} usage={usage} setView={navigate} onAddIncome={() => navigate("add", { initialType: "income" })} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />}
           {view === "setup" && <SetupView state={state} setState={guardedSetState} setView={navigate} />}
           {view === "spaces" && <SpacesView state={state} setState={guardedSetState} />}
           {view === "plan" && <PlanView state={state} usage={usage} summary={summary} setState={guardedSetState} />}
-          {view === "add" && <AddMovementView state={state} onSave={addTransaction} setView={navigate} />}
+          {view === "add" && <AddMovementView state={state} onSave={addTransaction} setView={navigate} initialType={addInitialType} />}
           {view === "ai" && <AIView state={state} setState={guardedSetState} onSave={addTransaction} aiAvailable={aiAvailable} onOpenPaywall={() => navigate("paywall")} />}
           {view === "receipts" && <ReceiptsView state={state} setState={guardedSetState} setView={navigate} onSave={addTransaction} uploadAttachment={uploadAttachment} householdId={householdId} />}
           {view === "movements" && <MovementsView state={state} setState={guardedSetState} setView={navigate} />}
@@ -1174,12 +1194,14 @@ function HomeView({
   summary,
   usage,
   setView,
+  onAddIncome,
   onChangeMonth,
 }: {
   state: AppState;
   summary: ReturnType<typeof summarize>;
   usage: ReturnType<typeof categoryUsage>;
   setView: (view: View) => void;
+  onAddIncome: () => void;
   onChangeMonth: (month: string) => void;
 }) {
   const { t } = useT();
@@ -1234,6 +1256,17 @@ function HomeView({
   const avgOutflow = priorOutflows.length ? Math.round(priorOutflows.reduce((sum, value) => sum + value, 0) / priorOutflows.length) : 0;
   const trendPct = avgOutflow > 0 ? (summary.outflow - avgOutflow) / avgOutflow : 0;
   const spentShare = summary.income > 0 ? summary.outflow / summary.income : 0;
+  const usesSpendingPlanHeadline = state.mode === "monthly-plan" && summary.plannedOutflow > 0;
+  const headlineCents = usesSpendingPlanHeadline ? summary.plannedOutflow - summary.outflow : summary.remainder;
+  const headlineKicker = usesSpendingPlanHeadline ? t("PUEDES GASTAR TODAVÍA", "LEFT TO SPEND") : t("BALANCE DEL MES", "MONTH BALANCE");
+  const headlineExplainer = usesSpendingPlanHeadline
+    ? headlineCents < 0
+      ? t(`Te pasaste del plan por ${formatMoney(Math.abs(headlineCents), state.currency)}`, `Over plan by ${formatMoney(Math.abs(headlineCents), state.currency)}`)
+      : t(`Plan de gastos ${formatMoney(summary.plannedOutflow, state.currency)} − gastado ${formatMoney(summary.outflow, state.currency)}`, `Spending plan ${formatMoney(summary.plannedOutflow, state.currency)} − spent ${formatMoney(summary.outflow, state.currency)}`)
+    : t(`Ingresos ${formatMoney(summary.income, state.currency)} − gastos ${formatMoney(summary.outflow, state.currency)}`, `Income ${formatMoney(summary.income, state.currency)} − spending ${formatMoney(summary.outflow, state.currency)}`);
+  const incomeRow = summary.plannedIncome > 0
+    ? t(`Ingresos del mes: ${formatMoney(summary.income, state.currency)} de ${formatMoney(summary.plannedIncome, state.currency)} esperados`, `Month income: ${formatMoney(summary.income, state.currency)} of ${formatMoney(summary.plannedIncome, state.currency)} expected`)
+    : t(`Ingresos del mes: ${formatMoney(summary.income, state.currency)}`, `Month income: ${formatMoney(summary.income, state.currency)}`);
 
   // Observaciones en lenguaje claro, todas derivadas de los datos reales de arriba.
   const observations: string[] = [];
@@ -1272,13 +1305,21 @@ function HomeView({
         </div>
       )}
       <section className="overflow-hidden rounded-3xl border border-white/60 bg-white/35 px-6 py-9 text-center backdrop-blur-xl">
-        <p className="kicker">{t("Te queda este mes", "Left this month")}</p>
-        <h2 className="serif mt-2 text-[3.25rem] font-bold leading-none tracking-tight md:text-[4.5rem]">{formatMoney(summary.remainder, state.currency)}</h2>
-        <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--lime)] bg-[rgba(204,255,0,0.2)] px-4 py-1.5 text-xs font-semibold text-[var(--primary)]">
+        <p className="kicker">{headlineKicker}</p>
+        <h2 className={`amount serif mx-auto mt-2 max-w-full break-words text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-none tracking-tight ${headlineCents < 0 ? "text-[var(--danger)]" : ""}`}>{formatMoney(headlineCents, state.currency)}</h2>
+        <p className={`mx-auto mt-3 max-w-2xl text-sm font-semibold ${headlineCents < 0 ? "text-[var(--danger)]" : "text-[var(--text-muted)]"}`}>{headlineExplainer}</p>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-[var(--line)] bg-white/65 px-4 py-1.5 text-xs font-semibold text-[var(--primary)]">
+            <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+            <span className="min-w-0 truncate">{incomeRow}</span>
+          </span>
+          <button className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm transition hover:bg-white/80" onClick={onAddIncome} type="button">
+            {t("Registrar ingreso", "Add income")}
+          </button>
+        </div>
+        <div className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[var(--lime)] bg-[rgba(204,255,0,0.2)] px-4 py-1.5 text-xs font-semibold text-[var(--primary)]">
           <ArrowUpRight className="h-3.5 w-3.5" />
-          {summary.income > 0
-            ? t(`Llevas ${formatMoney(summary.income, state.currency)} de ingresos · ${formatMoney(summary.outflow, state.currency)} de gastos`, `${formatMoney(summary.income, state.currency)} income · ${formatMoney(summary.outflow, state.currency)} spent`)
-            : t(`${formatMoney(summary.outflow, state.currency)} en gastos este mes`, `${formatMoney(summary.outflow, state.currency)} spent this month`)}
+          <span className="amount min-w-0 truncate">{t(`${formatMoney(summary.outflow, state.currency)} en gastos este mes`, `${formatMoney(summary.outflow, state.currency)} spent this month`)}</span>
         </div>
         {/* Una sola entrada de captura: registrar es la acción protagonista del Inicio. */}
         <div className="mt-6 flex justify-center">
@@ -1305,8 +1346,8 @@ function HomeView({
             {topSpending.map((item) => (
               <div key={item.id}>
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="truncate font-semibold">{item.name}</span>
-                  <span className="serif shrink-0 text-lg font-bold">{formatMoney(item.spent, state.currency)}</span>
+                  <span className="min-w-0 truncate font-semibold">{item.name}</span>
+                  <span className="amount serif shrink-0 whitespace-nowrap text-lg font-bold">{formatMoney(item.spent, state.currency)}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-soft)]">
                   <div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${Math.min(100, Math.round((item.spent / topSpent) * 100))}%` }} />
@@ -1361,8 +1402,8 @@ function HomeView({
               <div className="rounded-2xl bg-white/55 p-4" key={item.id}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{reviewReasonLabel(item.reason)}</p>
                 <div className="mt-1.5 flex items-center justify-between gap-3">
-                  <span className="font-semibold">{item.title}</span>
-                  <span className="serif text-lg font-bold">{formatMoney(item.amountCents, state.currency)}</span>
+                  <span className="min-w-0 truncate font-semibold">{item.title}</span>
+                  <span className="amount serif shrink-0 whitespace-nowrap text-lg font-bold">{formatMoney(item.amountCents, state.currency)}</span>
                 </div>
               </div>
             ))}
@@ -1774,6 +1815,7 @@ function PlanView({
 
   const selectedUsage = selectedCategoryId ? usage.find((item) => item.id === selectedCategoryId) : undefined;
   const selectedCategory = selectedUsage ? categoryById(state.categories, selectedUsage.id) : undefined;
+  const selectedHasSpendWithoutBudget = Boolean(selectedUsage && selectedUsage.plannedCents === 0 && selectedUsage.spent > 0);
   const selectedMovements = selectedUsage
     ? transactionsForMonth(state, state.activeMonth)
         .filter((transaction) => transaction.categoryId === selectedUsage.id || transaction.splits?.some((split) => split.categoryId === selectedUsage.id))
@@ -1824,7 +1866,7 @@ function PlanView({
     <ViewShell title={t("Plan mensual", "Monthly plan")} eyebrow={state.activeMonth} description={t("Define lo esperado, mira lo real y corrige antes del cierre.", "Set what you expect, watch what's real, and adjust before the close.")}>
       <Card>
         <p className="kicker">{modeLabel(state.mode, t)}</p>
-        <h2 className={`serif mt-2 text-6xl font-bold ${state.mode === "zero" && summary.assignable !== 0 ? "text-[var(--danger)]" : ""}`}>
+        <h2 className={`amount serif mt-2 max-w-full break-words text-6xl font-bold ${state.mode === "zero" && summary.assignable !== 0 ? "text-[var(--danger)]" : ""}`}>
           {state.mode === "zero" ? formatMoney(summary.assignable, state.currency) : state.mode === "tracker" ? formatMoney(summary.remainder, state.currency) : formatMoney(summary.budgetRemaining, state.currency)}
         </h2>
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -1850,20 +1892,41 @@ function PlanView({
         </div>
         <div className="mt-4 grid gap-2">
           {usage.length ? (
-            usage.map((item) => (
-              <CompactRow
-                key={item.id}
-                icon={<WalletCards className="h-5 w-5" />}
-                label={item.name}
-                sublabel={t(
-                  `${formatMoney(item.spent, state.currency)} de ${formatMoney(item.plannedCents, state.currency)}`,
-                  `${formatMoney(item.spent, state.currency)} of ${formatMoney(item.plannedCents, state.currency)}`,
-                )}
-                value={`${Math.round(item.ratio * 100)}%`}
-                valueTone={item.ratio > 1 ? "danger" : "default"}
-                onClick={() => openCategory(item.id)}
-              />
-            ))
+            usage.map((item) => {
+              const hasSpendWithoutBudget = item.plannedCents === 0 && item.spent > 0;
+              return (
+                <button
+                  className="group rounded-2xl border border-[var(--line)] bg-white/45 px-4 py-3 text-left transition hover:border-[var(--primary)] hover:bg-white/70"
+                  key={item.id}
+                  onClick={() => openCategory(item.id)}
+                  type="button"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--text-muted)]">
+                      <WalletCards className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold leading-tight text-[var(--ink)]">{item.name}</p>
+                      <p className="mt-0.5 truncate text-sm text-[var(--text-muted)]">
+                        {t(
+                          `${formatMoney(item.spent, state.currency)} de ${formatMoney(item.plannedCents, state.currency)}`,
+                          `${formatMoney(item.spent, state.currency)} of ${formatMoney(item.plannedCents, state.currency)}`,
+                        )}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 whitespace-nowrap text-sm font-bold leading-tight ${hasSpendWithoutBudget ? "text-[var(--text-muted)]" : item.ratio > 1 ? "text-[var(--danger)]" : "text-[var(--ink)]"}`}>
+                      {hasSpendWithoutBudget ? t("sin presupuesto", "no budget") : `${Math.round(item.ratio * 100)}%`}
+                    </span>
+                    <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-subtle)] transition group-hover:text-[var(--text-muted)]" />
+                  </div>
+                  <div className={`mt-3 h-1.5 rounded-full ${hasSpendWithoutBudget ? "border border-dashed border-[var(--text-subtle)] bg-white/50" : "overflow-hidden bg-[var(--surface-soft)]"}`}>
+                    {!hasSpendWithoutBudget && (
+                      <div className={`h-full rounded-full ${item.ratio > 1 ? "bg-[var(--danger)]" : "bg-[var(--primary)]"}`} style={{ width: `${Math.max(4, Math.min(item.ratio * 100, 100))}%` }} />
+                    )}
+                  </div>
+                </button>
+              );
+            })
           ) : (
             <EmptyState
               title={t("Sin categorías de gasto", "No spending categories")}
@@ -1902,10 +1965,16 @@ function PlanView({
           <div className="grid gap-5">
             <div>
               <p className="text-sm text-[var(--text-muted)]">{subcategoryPreview(selectedCategory?.subcategories, t("Sin datos", "No data"))}</p>
-              <Progress className="mt-3" value={selectedUsage.ratio} danger={selectedUsage.ratio > 1} />
+              {selectedHasSpendWithoutBudget ? (
+                <div className="mt-3 h-2 rounded-full border border-dashed border-[var(--text-subtle)] bg-white/50" />
+              ) : (
+                <Progress className="mt-3" value={selectedUsage.ratio} danger={selectedUsage.ratio > 1} />
+              )}
               <div className="mt-2 flex justify-between text-sm text-[var(--text-muted)]">
                 <span>{t(`${formatMoney(selectedUsage.spent, state.currency)} de ${formatMoney(selectedUsage.plannedCents, state.currency)}`, `${formatMoney(selectedUsage.spent, state.currency)} of ${formatMoney(selectedUsage.plannedCents, state.currency)}`)}</span>
-                <span className={selectedUsage.ratio > 1 ? "font-bold text-[var(--danger)]" : "font-semibold"}>{Math.round(selectedUsage.ratio * 100)}%</span>
+                <span className={selectedHasSpendWithoutBudget ? "font-semibold text-[var(--text-muted)]" : selectedUsage.ratio > 1 ? "font-bold text-[var(--danger)]" : "font-semibold"}>
+                  {selectedHasSpendWithoutBudget ? t("sin presupuesto", "no budget") : `${Math.round(selectedUsage.ratio * 100)}%`}
+                </span>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -1945,7 +2014,7 @@ function PlanView({
                         <h5 className="truncate font-semibold">{transaction.description}</h5>
                         <p className="truncate text-sm text-[var(--text-muted)]">{transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : transaction.person ?? t("Sin datos", "No details")}{transaction.subcategory ? ` · ${transaction.subcategory}` : ""}</p>
                       </div>
-                      <span className="shrink-0 font-semibold">{formatMoney(transaction.amountCents, state.currency)}</span>
+                      <span className="amount shrink-0 whitespace-nowrap font-semibold">{formatMoney(transaction.amountCents, state.currency)}</span>
                     </div>
                   ))
                 ) : (
@@ -2027,10 +2096,16 @@ function categoriesForCaptureType(categories: AppState["categories"], type: Tran
   return activeCategories.filter((category) => category.group !== "income");
 }
 
-function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: (input: NewTransactionInput) => boolean; setView: (view: View) => void }) {
+function AddMovementView({ state, onSave, setView, initialType = "expense" }: { state: AppState; onSave: (input: NewTransactionInput) => boolean; setView: (view: View) => void; initialType?: TransactionType }) {
   const { t } = useT();
   const { notify } = useToast();
   const firstExpense = state.categories.find((category) => category.group !== "income") ?? state.categories[0];
+  // An income capture must never land on an expense-group category (it would distort the
+  // month totals): prefer an archived income category over crossing groups.
+  const crossGroupFallback = initialType === "income"
+    ? state.categories.find((category) => category.group === "income") ?? firstExpense
+    : firstExpense;
+  const initialCategory = categoriesForCaptureType(state.categories, initialType)[0] ?? crossGroupFallback;
   const activeAccounts = state.accounts.filter((account) => !account.archived);
   const defaultAccount = activeAccounts.find((account) => account.defaultForCapture) ?? activeAccounts[0] ?? state.accounts[0];
   const transferAccount = activeAccounts.find((account) => account.id !== defaultAccount?.id) ?? defaultAccount;
@@ -2040,7 +2115,7 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
   // para datos atados al momento real (p. ej. la fecha de la tasa de cambio).
   const captureDate = defaultDateForMonth(state.activeMonth);
   const [form, setForm] = useState<NewTransactionInput>({
-    type: "expense",
+    type: initialType,
     date: captureDate,
     amount: "",
     currency: state.currency,
@@ -2051,8 +2126,8 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
     transferAccountId: transferAccount?.id ?? "",
     linkedTransactionId: "",
     linkKind: undefined,
-    categoryId: firstExpense.id,
-    subcategory: firstExpense.subcategories[0] ?? "",
+    categoryId: initialCategory.id,
+    subcategory: initialCategory.subcategories[0] ?? "",
     description: "",
     merchant: "",
     tags: "",
@@ -2995,7 +3070,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
   // Por defecto Movimientos muestra SOLO el mes activo (el del selector global). El toggle amplía
   // a todos los meses. Antes listaba todo mezclado e ignoraba el mes.
   const [showAllMonths, setShowAllMonths] = useState(false);
-  const [selectedId, setSelectedId] = useState(state.transactions[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(() => transactionsForMonth(state, state.activeMonth)[0]?.id ?? "");
   const [splitDraft, setSplitDraft] = useState({
     categoryId: state.categories.find((category) => category.group !== "income")?.id ?? state.categories[0]?.id ?? "",
     amount: "",
@@ -3007,8 +3082,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
   const [editOpen, setEditOpen] = useState(false);
   const [splitsOpen, setSplitsOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
-  const selected = state.transactions.find((transaction) => transaction.id === selectedId) ?? state.transactions[0];
-  const filtered = state.transactions.filter((transaction) => {
+  const filtered = useMemo(() => state.transactions.filter((transaction) => {
     const category = categoryById(state.categories, transaction.categoryId);
     const needle = `${transaction.description} ${transaction.merchant ?? ""} ${transaction.tags.join(" ")} ${category?.name ?? ""}`.toLowerCase();
     const matchesQuery = !query || needle.includes(query.toLowerCase());
@@ -3016,7 +3090,13 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
     const matchesType = typeFilter === "all" || transaction.type === typeFilter;
     const matchesMonth = showAllMonths || transaction.date.slice(0, 7) === state.activeMonth;
     return matchesMonth && matchesQuery && matchesStatus && matchesType;
-  });
+  }), [query, showAllMonths, state.activeMonth, state.categories, state.transactions, statusFilter, typeFilter]);
+  const selected = filtered.find((transaction) => transaction.id === selectedId);
+
+  useEffect(() => {
+    const nextSelectedId = filtered.some((transaction) => transaction.id === selectedId) ? selectedId : filtered[0]?.id ?? "";
+    if (selectedId !== nextSelectedId) setSelectedId(nextSelectedId);
+  }, [filtered, selectedId]);
 
   function updateTransaction(id: string, patch: Partial<Transaction>) {
     const currentTransaction = state.transactions.find((transaction) => transaction.id === id);
@@ -3099,7 +3179,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
     if (!selected) return;
     if (!confirmClosedMonthChange(state, selected.date)) return;
 
-    const nextSelection = state.transactions.find((transaction) => transaction.id !== selected.id)?.id ?? "";
+    const nextSelection = filtered.find((transaction) => transaction.id !== selected.id)?.id ?? "";
     setState((current) => {
       // Remove the selected movement AND any movement linked to it (e.g. a refund tied to
       // this expense), reversing every account effect and every mirror ledger (debt/goal/
@@ -3311,11 +3391,11 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
             {showAllMonths ? t("Ver solo este mes", "Only this month") : t("Ver todos los meses", "All months")}
           </button>
         </div>
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_420px]">
-          <div className="divide-y divide-[var(--line)]">
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0 divide-y divide-[var(--line)]">
             {filtered.map((transaction) => (
               <button
-                className={`grid w-full gap-3 py-4 text-left sm:grid-cols-[1fr_auto] sm:items-center ${selected?.id === transaction.id ? "rounded-2xl bg-white/45 px-3" : ""}`}
+                className={`grid w-full min-w-0 gap-3 py-4 text-left sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${selected?.id === transaction.id ? "rounded-2xl bg-white/45 px-3" : ""}`}
                 key={transaction.id}
                 onClick={() => setSelectedId(transaction.id)}
                 type="button"
@@ -3332,10 +3412,10 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
             )}
           </div>
           {selected && (
-            <div className="rounded-3xl border border-[var(--line)] bg-white/45 p-5">
+            <div className="min-w-0 rounded-3xl border border-[var(--line)] bg-white/45 p-5">
               {/* Glance: el número primero, luego descripción y categoría. Todo lo demás vive en el Modal de edición. */}
               <p className="kicker">{transactionStatusLabel(selected.status)}</p>
-              <p className={`serif mt-1 text-4xl font-bold leading-none ${selected.type === "income" || selected.type === "transfer" || selected.type === "refund" ? "text-[var(--primary)]" : ""}`}>
+              <p className={`amount serif mt-1 max-w-full break-words text-[clamp(2rem,5vw,3rem)] font-bold leading-none ${selected.type === "income" || selected.type === "transfer" || selected.type === "refund" ? "text-[var(--primary)]" : ""}`}>
                 {selected.type === "income" || selected.type === "refund" ? "+" : selected.type === "transfer" ? "" : "-"}{formatMoney(selected.amountCents, state.currency)}
               </p>
               <h3 className="serif mt-3 text-2xl font-bold leading-tight">{selected.description}</h3>
@@ -3456,7 +3536,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
                 {(selected.splits ?? []).map((split) => (
                   <div className="grid gap-3 rounded-2xl bg-white/60 p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center" key={split.id}>
                     <span>{categoryById(state.categories, split.categoryId)?.name ?? t("Categoria", "Category")} · {split.note ?? t("sin nota", "no note")}</span>
-                    <strong>{formatMoney(split.amountCents, state.currency)}</strong>
+                    <strong className="amount shrink-0 whitespace-nowrap">{formatMoney(split.amountCents, state.currency)}</strong>
                     <button className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-[var(--danger)]" onClick={() => deleteSplit(split.id)} type="button">{t("Quitar", "Remove")}</button>
                   </div>
                 ))}
@@ -3497,7 +3577,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
                     <div className="grid grid-cols-[1fr_auto_auto] items-baseline gap-3 text-sm" key={`${item.name}-${index}`}>
                       <span className="min-w-0 truncate text-[var(--foreground)]">{item.name || t("Producto", "Product")}</span>
                       <span className="text-xs text-[var(--text-muted)]">x{item.quantity || 1}</span>
-                      <strong className="text-[var(--foreground)]">{formatMoney(item.amountCents, selected.originalCurrency)}</strong>
+                      <strong className="amount shrink-0 whitespace-nowrap text-[var(--foreground)]">{formatMoney(item.amountCents, selected.originalCurrency)}</strong>
                     </div>
                   ))}
                 </div>
@@ -8247,7 +8327,7 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: "
   return (
     <div className="min-w-0">
       <p className="kicker">{label}</p>
-      <p className={`serif mt-1.5 break-words text-3xl font-bold leading-tight ${tone === "good" ? "text-[var(--primary)]" : tone === "bad" ? "text-[var(--danger)]" : ""}`}>{value}</p>
+      <p className={`amount serif mt-1.5 max-w-full break-words text-3xl font-bold leading-tight ${tone === "good" ? "text-[var(--primary)]" : tone === "bad" ? "text-[var(--danger)]" : ""}`}>{value}</p>
     </div>
   );
 }
@@ -8283,7 +8363,7 @@ function TransactionList({ state, transactions }: { state: AppState; transaction
     <div className="mt-4 divide-y divide-[var(--line)]">
       {transactions.map((transaction) => {
         return (
-          <div className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center" key={transaction.id}>
+          <div className="grid min-w-0 gap-3 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center" key={transaction.id}>
             <TransactionRow state={state} transaction={transaction} />
           </div>
         );
@@ -8304,12 +8384,12 @@ function TransactionRow({ state, transaction }: { state: AppState; transaction: 
 
   return (
     <>
-      <div className="flex items-center gap-4">
-        <div className={`grid h-12 w-12 place-items-center rounded-full ${income || transfer || refund ? "bg-[var(--lime)]" : "bg-[var(--surface-soft)]"}`}>
+      <div className="flex min-w-0 items-center gap-4">
+        <div className={`grid h-12 w-12 shrink-0 place-items-center rounded-full ${income || transfer || refund ? "bg-[var(--lime)]" : "bg-[var(--surface-soft)]"}`}>
           {income || refund ? <ArrowUpRight className="h-5 w-5" /> : transfer ? <Repeat className="h-5 w-5" /> : <ArrowDownLeft className="h-5 w-5" />}
         </div>
         <div className="min-w-0">
-          <p className="font-semibold">{transaction.description}</p>
+          <p className="truncate font-semibold">{transaction.description}</p>
           <p className="truncate text-sm text-[var(--text-muted)]">{transaction.date} · {transfer ? t(`Transferencia a ${destination ?? "cuenta destino"}`, `Transfer to ${destination ?? "destination account"}`) : refund ? t(`Reembolso de ${linked?.description ?? category?.name ?? "gasto"}`, `Refund of ${linked?.description ?? category?.name ?? "expense"}`) : splitSummary || category?.name} · {transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : t("Sin comercio", "No merchant")}</p>
           <details className="group mt-0.5">
             <summary className="cursor-pointer select-none list-none text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)] transition hover:text-[var(--primary)]">{t("Detalles", "Details")}</summary>
@@ -8320,7 +8400,7 @@ function TransactionRow({ state, transaction }: { state: AppState; transaction: 
           </details>
         </div>
       </div>
-      <p className={`serif text-right text-2xl font-bold ${income || transfer || refund ? "text-[var(--primary)]" : ""}`}>{income || refund ? "+" : transfer ? "" : "-"}{formatMoney(transaction.amountCents, state.currency)}</p>
+      <p className={`amount serif shrink-0 whitespace-nowrap text-right text-2xl font-bold ${income || transfer || refund ? "text-[var(--primary)]" : ""}`}>{income || refund ? "+" : transfer ? "" : "-"}{formatMoney(transaction.amountCents, state.currency)}</p>
     </>
   );
 }
@@ -8333,7 +8413,7 @@ function ListCard({ title, subtitle, value, danger }: { title: string; subtitle:
           <h3 className="font-semibold">{title}</h3>
           <p className="text-sm text-[var(--text-muted)]">{subtitle}</p>
         </div>
-        <span className={`serif text-2xl font-bold ${danger ? "text-[var(--danger)]" : ""}`}>{value}</span>
+        <span className={`amount serif shrink-0 whitespace-nowrap text-2xl font-bold ${danger ? "text-[var(--danger)]" : ""}`}>{value}</span>
       </div>
     </Card>
   );

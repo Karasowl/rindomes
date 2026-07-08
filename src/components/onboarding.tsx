@@ -74,14 +74,21 @@ export function Onboarding({
   activeMonth,
   onComplete,
   onSkip,
+  relaunched = false,
+  hasExistingData = false,
+  onExit,
 }: {
   currency?: CurrencyCode;
   activeMonth: string;
   onComplete: (state: AppState) => void;
   onSkip: () => void;
+  relaunched?: boolean;
+  hasExistingData?: boolean;
+  onExit?: () => void;
 }) {
   const { t } = useT();
   const [step, setStep] = useState(0);
+  const [rerunConfirmed, setRerunConfirmed] = useState(!relaunched || !hasExistingData);
   const [ownerName, setOwnerName] = useState("");
   const [householdName, setHouseholdName] = useState("");
   const [mode, setMode] = useState<Mode>("monthly-plan");
@@ -114,9 +121,36 @@ export function Onboarding({
     onComplete(buildOnboardingState(input));
   }
 
+  if (!rerunConfirmed) {
+    return (
+      <main className="grain mesh-bg flex min-h-screen flex-col items-center justify-center px-5 py-10 text-[var(--ink)]">
+        <section className="w-full max-w-xl rounded-3xl border border-white/70 bg-white/70 p-6 shadow-[var(--shadow)] backdrop-blur-xl">
+          <p className="kicker">{t("Primer mes", "First month")}</p>
+          <h1 className="serif mt-2 text-4xl font-bold tracking-tight">{t("Volver a configurar tu mes", "Set up your month again")}</h1>
+          <p className="mt-4 text-sm leading-relaxed text-[var(--text-muted)]">
+            {t("Ya tienes datos. Rehacer la configuración puede duplicar categorías o cuentas.", "You already have data. Running setup again can duplicate categories or accounts.")}
+          </p>
+          <div className="mt-7 grid gap-3 sm:grid-cols-[1fr_auto]">
+            <button className="rounded-full bg-[var(--lime)] px-6 py-3 text-sm font-bold text-black transition hover:brightness-95" onClick={onExit} type="button">
+              {t("Volver a la app", "Back to app")}
+            </button>
+            <button className="rounded-full border border-black/[0.46] bg-white/70 px-6 py-3 text-sm font-bold text-[var(--foreground)] transition hover:bg-white" onClick={() => setRerunConfirmed(true)} type="button">
+              {t("Continuar de todos modos", "Continue anyway")}
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="grain mesh-bg flex min-h-screen flex-col items-center px-5 py-10 text-[var(--ink)]">
       <div className="flex w-full max-w-xl flex-1 flex-col">
+        {relaunched && onExit && (
+          <button className="mb-6 inline-flex w-fit items-center gap-2 rounded-full border border-black/[0.46] bg-white/70 px-4 py-2 text-sm font-bold text-[var(--foreground)] transition hover:bg-white" onClick={onExit} type="button">
+            {t("← Volver", "← Back")}
+          </button>
+        )}
         {step > 0 && (
           <div className="mb-8 flex items-center gap-2">
             {[0, 1, 2].map((index) => (
