@@ -9,12 +9,14 @@ import { useT } from "@/lib/i18n";
 
 const HOUSEHOLD_KEY = "rindomes.convex.householdId";
 
+type Notify = (message: string, tone?: "success" | "error" | "info") => void;
+
 /**
  * Real multiuser: invite family members by email and manage who can access the
  * hogar. An invite is claimed automatically when that email signs in. Only shown
  * to a signed-in user that already has a hogar in Convex.
  */
-export function MembersPanel() {
+export function MembersPanel({ notify }: { notify?: Notify } = {}) {
   const { t } = useT();
   const { isAuthenticated } = useConvexAuth();
   const [householdId] = useState<string | null>(() =>
@@ -38,9 +40,13 @@ export function MembersPanel() {
     try {
       await invite({ householdId: householdId as Id<"households">, email: email.trim(), role });
       setEmail("");
-      setMessage(t("Invitación enviada.", "Invitation sent."));
+      const successMessage = t("Invitación enviada.", "Invitation sent.");
+      setMessage(successMessage);
+      notify?.(successMessage, "success");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t("No se pudo invitar.", "Couldn’t send the invitation."));
+      const errorMessage = error instanceof Error ? error.message : t("No se pudo invitar.", "Couldn’t send the invitation.");
+      setMessage(errorMessage);
+      notify?.(errorMessage, "error");
     }
   }
 

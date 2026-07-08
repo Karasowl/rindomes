@@ -1,14 +1,57 @@
 "use client";
 
-import { type Dispatch, type SetStateAction, useEffect, useRef, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { stateFromConvexSnapshot, stateSnapshotForConvex } from "@/lib/convex-adapter";
+import { useT } from "@/lib/i18n";
 import { createEmptyState } from "@/lib/onboarding";
 import type { AppState } from "@/lib/types";
 
 const HOUSEHOLD_KEY = "rindomes.convex.householdId";
+
+export type SyncStatus = "idle" | "saving" | "saved" | "offline_error" | "conflict";
+
+export interface SyncStatusState {
+  status: SyncStatus;
+  lastSavedAt?: number;
+}
+
+const syncStatusListeners = new Set<() => void>();
+let syncStatusSnapshot: SyncStatusState = { status: "idle" };
+let savedIdleTimer: number | null = null;
+
+function setSyncStatus(status: SyncStatus, lastSavedAt = syncStatusSnapshot.lastSavedAt) {
+  if (savedIdleTimer && typeof window !== "undefined") {
+    window.clearTimeout(savedIdleTimer);
+    savedIdleTimer = null;
+  }
+  syncStatusSnapshot = { status, lastSavedAt };
+  syncStatusListeners.forEach((listener) => listener());
+  if (status === "saved" && typeof window !== "undefined") {
+    savedIdleTimer = window.setTimeout(() => {
+      syncStatusSnapshot = { status: "idle", lastSavedAt };
+      syncStatusListeners.forEach((listener) => listener());
+      savedIdleTimer = null;
+    }, 2000);
+  }
+}
+
+function subscribeSyncStatus(listener: () => void) {
+  syncStatusListeners.add(listener);
+  return () => {
+    syncStatusListeners.delete(listener);
+  };
+}
+
+function getSyncStatusSnapshot() {
+  return syncStatusSnapshot;
+}
+
+export function useSyncStatus() {
+  return useSyncExternalStore(subscribeSyncStatus, getSyncStatusSnapshot, getSyncStatusSnapshot);
+}
 
 /**
  * Makes Convex the live source of truth, without rewriting every view:
@@ -27,12 +70,14 @@ export function ConvexSync({
   canEdit,
   onNeedsOnboarding,
   onHouseholdId,
+  notify,
 }: {
   state: AppState;
   setState: Dispatch<SetStateAction<AppState>>;
   ready: boolean;
   canEdit: boolean;
   onNeedsOnboarding?: () => void;
+  notify?: (message: string, tone?: "success" | "error" | "info") => void;
   // Lifts the active householdId up to AppShell. Called whenever it changes:
   // initial load (from localStorage), login switch (auth-scoped household), and
   // after a save that provisions a brand-new household. This is the seam the
@@ -42,6 +87,7 @@ export function ConvexSync({
   // hydration path below, so onHouseholdId fires for verified sign-ins too.
   onHouseholdId?: (id: string | null) => void;
 }) {
+  const { t } = useT();
   const saveSnapshot = useMutation(api.finance.saveSnapshot);
   const [householdId, setHouseholdId] = useState<string | null>(() =>
     typeof window !== "undefined" ? window.localStorage.getItem(HOUSEHOLD_KEY) : null,
@@ -55,6 +101,17 @@ export function ConvexSync({
   const skipNextSaveRef = useRef(false);
   const suppressEchoUntilRef = useRef(0);
   const saveTimerRef = useRef<number | null>(null);
+  // Stable refs so the persistence effect below never re-runs (= never re-saves) just because
+  // the language or the toast callback identity changed.
+  const notifyRef = useRef(notify);
+  notifyRef.current = notify;
+  const tRef = useRef(t);
+  tRef.current = t;
+
+  // A conflict/offline chip must not survive an account or household switch.
+  useEffect(() => {
+    setSyncStatus("idle");
+  }, [householdId]);
   // The household version this client last hydrated. Sent as baseVersion on every save so the
   // backend can reject (instead of silently apply) a write made against stale data.
   const versionRef = useRef<number | undefined>(undefined);
@@ -162,12 +219,15 @@ export function ConvexSync({
     saveTimerRef.current = window.setTimeout(() => {
       void (async () => {
         try {
+          setSyncStatus("saving");
           const baseVersion = householdId ? versionRef.current : undefined;
           const payload = stateSnapshotForConvex(state, householdId ?? undefined, baseVersion);
           const result = await saveSnapshot(payload as Parameters<typeof saveSnapshot>[0]);
           if (result?.conflict) {
             // Another device advanced the hogar past our version. Don't overwrite it: drop
             // our stale write and let the reactive snapshot re-hydrate the latest cloud state.
+            setSyncStatus("conflict");
+            notifyRef.current?.(tRef.current("Otro dispositivo guardó primero: tus últimos cambios se recargaron desde la nube.", "Another device saved first: your latest changes were reloaded from the cloud."), "error");
             hydratedRef.current = false;
             suppressEchoUntilRef.current = 0;
             return;
@@ -178,8 +238,10 @@ export function ConvexSync({
             setHouseholdId(result.householdId);
             window.localStorage.setItem(HOUSEHOLD_KEY, result.householdId);
           }
+          setSyncStatus("saved", Date.now());
         } catch {
           // Keep the local copy; the next change retries.
+          setSyncStatus("offline_error");
         }
       })();
     }, 1200);

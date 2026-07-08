@@ -55,6 +55,28 @@ textarea {
   font: inherit;
 }
 
+button:not(:disabled),
+[role="button"] {
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(0.955);
+}
+
+button:not(:disabled):active {
+  transform: scale(0.985);
+  filter: brightness(0.93);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled),
+  [role="button"] {
+    transition: filter 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+  }
+}
+
 .mesh-bg {
   background:
     radial-gradient(circle at 20% -4%, rgba(204, 255, 0, 0.34), transparent 34rem),

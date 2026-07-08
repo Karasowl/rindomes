@@ -7,6 +7,7 @@ import {
   Bell,
   Bot,
   Building2,
+  CheckCircle2,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -15,6 +16,7 @@ import {
   Download,
   FileSpreadsheet,
   Home,
+  Info,
   Landmark,
   LayoutDashboard,
   Menu,
@@ -33,14 +35,14 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { type Dispatch, type FormEvent, type ReactNode, type SetStateAction, useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, type Dispatch, type FormEvent, type ReactNode, type SetStateAction, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAction, useConvexAuth, useConvex, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { applyAccountEffect } from "@/lib/account-effects";
 import { accountKindLabel, aiActionKindLabel, aiActionStatusLabel, aiProviderLabel, currencyLabel, debtStrategyLabel, merchantDisplay, priorityLabel, receiptSourceLabel, receiptStatusLabel, recurringFrequencyLabel, reviewReasonLabel, roleLabel, spaceKindLabel, subscriptionPlanLabel, transactionStatusLabel, transactionTypeLabel } from "@/lib/labels";
-import { ConvexSync } from "./convex-sync";
+import { ConvexSync, useSyncStatus } from "./convex-sync";
 import { Onboarding } from "./onboarding";
 import { AuthPanel } from "./auth-panel";
 import { MembersPanel } from "./members-panel";
@@ -173,6 +175,73 @@ interface AppNotification {
   action: string;
   view: View;
   tone?: "default" | "danger";
+}
+
+type ToastTone = "success" | "error" | "info";
+
+interface ToastItem {
+  id: string;
+  message: string;
+  tone: ToastTone;
+  visible: boolean;
+}
+
+interface ToastContextValue {
+  notify: (message: string, tone?: ToastTone) => void;
+}
+
+const ToastContext = createContext<ToastContextValue>({ notify: () => {} });
+
+function useToast() {
+  return useContext(ToastContext);
+}
+
+function ToastProvider({ children }: { children: ReactNode }) {
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+
+  const notify = useCallback((message: string, tone: ToastTone = "info") => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    setToasts((current) => [...current, { id, message, tone, visible: true }].slice(-6));
+    window.setTimeout(() => {
+      setToasts((current) => current.map((toast) => toast.id === id ? { ...toast, visible: false } : toast));
+    }, 3200);
+    window.setTimeout(() => {
+      setToasts((current) => current.filter((toast) => toast.id !== id));
+    }, 3500);
+  }, []);
+
+  return (
+    <ToastContext.Provider value={{ notify }}>
+      {children}
+      <ToastViewport toasts={toasts} />
+    </ToastContext.Provider>
+  );
+}
+
+function ToastViewport({ toasts }: { toasts: ToastItem[] }) {
+  const visibleToasts = toasts.slice(-3);
+
+  return (
+    <div
+      aria-live="polite"
+      className="pointer-events-none fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 flex-col gap-2 md:bottom-6 md:left-auto md:right-6 md:w-96 md:max-w-none md:translate-x-0"
+    >
+      {visibleToasts.map((toast) => {
+        const Icon = toast.tone === "success" ? CheckCircle2 : toast.tone === "error" ? AlertTriangle : Info;
+        const toneClass = toast.tone === "success" ? "text-[var(--primary)]" : toast.tone === "error" ? "text-[var(--danger)]" : "text-[var(--text-muted)]";
+        return (
+          <div
+            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-white/85 px-4 py-3 text-sm font-semibold text-[var(--foreground)] shadow-[var(--shadow)] backdrop-blur-xl transition-all duration-200 ${toast.visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
+            key={toast.id}
+            role="status"
+          >
+            <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${toneClass}`} />
+            <span>{toast.message}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function NavButton({ viewKey, active, onClick }: { viewKey: View; active: boolean; onClick: () => void }) {
@@ -351,8 +420,17 @@ function CloudBindings({
   return null;
 }
 
-function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEmail?: string }) {
+function AppShell(props: { authed?: boolean; authEmail?: string }) {
+  return (
+    <ToastProvider>
+      <AppShellContent {...props} />
+    </ToastProvider>
+  );
+}
+
+function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean; authEmail?: string }) {
   const { t } = useT();
+  const { notify } = useToast();
   const [state, setState] = useState<AppState>(() => createEmptyState());
   const [view, setView] = useState<View>("home");
   const [viewHistory, setViewHistory] = useState<View[]>([]);
@@ -632,13 +710,14 @@ function AppShell({ authed = false, authEmail = "" }: { authed?: boolean; authEm
             canEdit={canEdit}
             onNeedsOnboarding={() => setShowOnboarding(true)}
             onHouseholdId={setHouseholdId}
+            notify={notify}
           />
           {/* Produces the bound Convex surface (entitlement + receipts/AI helpers) only inside the
               provider; lifts it up via setCloud (a stable setState dispatcher). */}
           <CloudBindings householdId={householdId} onBindings={setCloud} />
         </>
       )}
-      <TopBar state={state} setView={navigate} canGoBack={viewHistory.length > 0} onBack={goBack} authed={authed} authEmail={authEmail} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />
+      <TopBar state={state} setView={navigate} canGoBack={viewHistory.length > 0} onBack={goBack} authed={authed} authEmail={authEmail} showSyncStatus={convexConfigured && authed} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />
       <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-5 pb-12 pt-5 md:grid-cols-[244px_minmax(0,1fr)] md:px-12 lg:px-16">
         <aside className="app-scrollbar sticky top-24 hidden h-[calc(100vh-6.5rem)] flex-col gap-1.5 overflow-y-auto rounded-3xl border border-white/70 bg-white/55 p-2.5 backdrop-blur-xl md:flex">
           <div className="flex flex-col gap-0.5">
@@ -877,7 +956,25 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
   );
 }
 
-function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail = "", onChangeMonth }: { state: AppState; setView: (view: View) => void; canGoBack: boolean; onBack: () => void; authed?: boolean; authEmail?: string; onChangeMonth: (month: string) => void }) {
+function TopBar({
+  state,
+  setView,
+  canGoBack,
+  onBack,
+  authed = false,
+  authEmail = "",
+  showSyncStatus = false,
+  onChangeMonth,
+}: {
+  state: AppState;
+  setView: (view: View) => void;
+  canGoBack: boolean;
+  onBack: () => void;
+  authed?: boolean;
+  authEmail?: string;
+  showSyncStatus?: boolean;
+  onChangeMonth: (month: string) => void;
+}) {
   const { t } = useT();
   const signedIn = authed || state.user.status === "signed_in";
   const accountLabel = authed ? (authEmail || state.user.name || t("Cuenta", "Account")) : (state.user.status === "signed_in" ? state.user.name : t("Inicia sesión", "Sign in"));
@@ -912,6 +1009,7 @@ function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail =
         <MonthSwitcher month={state.activeMonth} onChange={onChangeMonth} />
         <div className="flex items-center gap-2">
           <LanguageToggle />
+          {showSyncStatus && <SyncStatusChip />}
           <button className="hidden max-w-[180px] rounded-full bg-white/60 px-4 py-2 text-left text-xs font-semibold text-[var(--foreground)] transition hover:bg-white md:block" onClick={() => setView("account")} type="button">
             <span className="block text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{signedIn ? t("Sesión", "Session") : t("Sin sesión", "Signed out")}</span>
             <span className="block truncate">{accountLabel}</span>
@@ -955,6 +1053,32 @@ function TopBar({ state, setView, canGoBack, onBack, authed = false, authEmail =
         </div>
       </div>
     </header>
+  );
+}
+
+function SyncStatusChip() {
+  const { t } = useT();
+  const sync = useSyncStatus();
+
+  const label = sync.status === "saving"
+    ? t("Guardando...", "Saving...")
+    : sync.status === "offline_error"
+      ? t("Sin conexión", "Offline")
+      : sync.status === "conflict"
+        ? t("Conflicto", "Conflict")
+        : t("Guardado", "Saved");
+  const dotClass = sync.status === "saving"
+    ? "bg-amber-500 animate-pulse"
+    : sync.status === "offline_error" || sync.status === "conflict"
+      ? "bg-[var(--danger)]"
+      : "bg-green-600";
+  const showText = sync.status !== "idle";
+
+  return (
+    <div aria-atomic="true" aria-live="polite" className="inline-flex h-8 items-center gap-2 rounded-full bg-white/55 px-2.5 text-xs font-semibold text-[var(--text-muted)]" role="status" aria-label={label} title={label}>
+      <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`} />
+      {showText && <span className="hidden whitespace-nowrap md:inline">{label}</span>}
+    </div>
   );
 }
 
@@ -1905,6 +2029,7 @@ function categoriesForCaptureType(categories: AppState["categories"], type: Tran
 
 function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: (input: NewTransactionInput) => boolean; setView: (view: View) => void }) {
   const { t } = useT();
+  const { notify } = useToast();
   const firstExpense = state.categories.find((category) => category.group !== "income") ?? state.categories[0];
   const activeAccounts = state.accounts.filter((account) => !account.archived);
   const defaultAccount = activeAccounts.find((account) => account.defaultForCapture) ?? activeAccounts[0] ?? state.accounts[0];
@@ -2005,7 +2130,10 @@ function AddMovementView({ state, onSave, setView }: { state: AppState; onSave: 
       description: movementDescription(form),
       afterSaveView,
     });
-    if (saved && afterSaveView === "add") clearForNextMovement();
+    if (saved) {
+      notify(t("Movimiento guardado", "Transaction saved"), "success");
+      if (afterSaveView === "add") clearForNextMovement();
+    }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -6484,6 +6612,7 @@ function FamilyView({ state, setState }: { state: AppState; setState: Dispatch<S
 
 function ExportView({ state }: { state: AppState }) {
   const { t } = useT();
+  const { notify } = useToast();
   const monthlyTransactions = state.transactions.filter((transaction) => transaction.date.startsWith(state.activeMonth));
   const approved = monthlyTransactions.filter((transaction) => transaction.status === "approved");
   const summary = summarize(state);
@@ -6499,6 +6628,10 @@ function ExportView({ state }: { state: AppState }) {
     "Categorias con mayor uso:",
     ...usageRows.slice(0, 6).map((item) => `- ${item.name}: ${formatMoney(item.spent, state.currency)} real / ${formatMoney(item.plannedCents, state.currency)} plan (${Math.round(item.ratio * 100)}%)`),
   ].join("\n");
+
+  function notifyFileDownloaded() {
+    notify(t("Archivo descargado", "File downloaded"), "success");
+  }
 
   function exportTransactionsCsv() {
     const rows = monthlyTransactions.map((transaction) => {
@@ -6543,6 +6676,7 @@ function ExportView({ state }: { state: AppState }) {
       "splits",
       "nota",
     ], rows), "text/csv;charset=utf-8");
+    notifyFileDownloaded();
   }
 
   function exportPlanCsv() {
@@ -6558,14 +6692,17 @@ function ExportView({ state }: { state: AppState }) {
       ];
     });
     downloadText(`rindomes-plan-${state.activeMonth}.csv`, toCsv(["grupo", "categoria", "subcategorias", "origen", "plan", "real", "diferencia"], rows), "text/csv;charset=utf-8");
+    notifyFileDownloaded();
   }
 
   function exportBackupJson() {
     downloadText(`rindomes-backup-${state.activeMonth}.json`, JSON.stringify(state, null, 2), "application/json;charset=utf-8");
+    notifyFileDownloaded();
   }
 
   function exportMonthlySummaryText() {
     downloadText(`rindomes-resumen-${state.activeMonth}.txt`, monthlyTextSummary, "text/plain;charset=utf-8");
+    notifyFileDownloaded();
   }
 
   async function exportWorkbookXlsx() {
@@ -6639,6 +6776,7 @@ function ExportView({ state }: { state: AppState }) {
 
     const buffer = await workbook.xlsx.writeBuffer();
     downloadBlob(`rindomes-${state.activeMonth}.xlsx`, new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    notifyFileDownloaded();
   }
 
   const exportRows: Array<{
@@ -6720,6 +6858,7 @@ function ExportView({ state }: { state: AppState }) {
 // Convex is configured (so the auth/mutation hooks always run under the provider).
 function CloudAccountSection() {
   const { t } = useT();
+  const { notify } = useToast();
   const { signOut } = useAuthActions();
   const deleteAccount = useMutation(api.finance.deleteAccount);
   const [deleting, setDeleting] = useState(false);
@@ -6752,7 +6891,7 @@ function CloudAccountSection() {
   return (
     <div className="mb-5 grid gap-5">
       <AuthPanel />
-      <MembersPanel />
+      <MembersPanel notify={notify} />
       <Card>
         <h3 className="serif text-2xl font-bold text-[var(--danger)]">{t("Zona de peligro", "Danger zone")}</h3>
         <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Borra tu cuenta y todos tus datos (cuentas, movimientos, deudas, metas) de la nube de forma permanente. Tendrás que registrarte de nuevo para volver a usar la app.", "Permanently delete your account and all your data (accounts, transactions, debts, goals) from the cloud. You'll need to sign up again to use the app.")}</p>
@@ -7690,14 +7829,16 @@ function normalizeImportDate(value: string, activeMonth: string) {
 
 function ImportView({ state, setState }: { state: AppState; setState: Dispatch<SetStateAction<AppState>> }) {
   const { t } = useT();
+  const { notify } = useToast();
   const [backupPreview, setBackupPreview] = useState<AppState | null>(null);
   const [pasteText, setPasteText] = useState("");
   const [textPreview, setTextPreview] = useState<TextImportPreview | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "applied" | "error">("idle");
+  const [restoringBackup, setRestoringBackup] = useState(false);
   const [message, setMessage] = useState(t("Selecciona un respaldo JSON exportado desde RindoMes para restaurarlo.", "Select a JSON backup exported from RindoMes to restore it."));
 
   async function handleBackupFile(file?: File) {
-    if (!file) return;
+    if (!file || restoringBackup) return;
 
     try {
       setStatus("loading");
@@ -7717,19 +7858,28 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
     }
   }
 
-  function applyBackup() {
-    if (!backupPreview) return;
+  async function applyBackup() {
+    if (!backupPreview || restoringBackup) return;
 
+    const backup = backupPreview;
+    const transactionCount = backup.transactions.length;
+    setRestoringBackup(true);
+    setStatus("loading");
+    setMessage(t("Restaurando respaldo...", "Restoring backup..."));
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 600));
     // The backup carries the household's finances; the session keeps its own identity,
     // plan, and member roster so restoring never signs you out or downgrades you.
     setState((current) => ({
-      ...backupPreview,
+      ...backup,
       user: current.user,
       subscription: current.subscription,
       members: current.members,
     }));
+    setBackupPreview(null);
     setStatus("applied");
+    setRestoringBackup(false);
     setMessage(t("Respaldo restaurado. El plan, los movimientos y las cuentas ahora salen del archivo.", "Backup restored. Your plan, transactions, and accounts now come from the file."));
+    notify(t(`Respaldo restaurado: ${transactionCount} movimientos cargados.`, `Backup restored: ${transactionCount} transactions loaded.`), "success");
   }
 
   function previewTextImport() {
@@ -7754,6 +7904,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
     }));
     setStatus("applied");
     setMessage(t(`Importados ${textPreview.transactions.length} movimientos pegados. ${textPreview.reviewItems.length} quedaron en revision.`, `Imported ${textPreview.transactions.length} pasted transactions. ${textPreview.reviewItems.length} left for review.`));
+    notify(t(`Importados ${textPreview.transactions.length} movimientos pegados.`, `Imported ${textPreview.transactions.length} pasted transactions.`), "success");
   }
 
   return (
@@ -7766,7 +7917,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
           <label className="mt-6 inline-flex cursor-pointer items-center rounded-full bg-[var(--lime)] px-6 py-3 font-semibold text-[var(--ink)]">
             <Download className="mr-2 inline h-4 w-4" />
             {status === "loading" ? t("Leyendo...", "Reading...") : t("Seleccionar archivo JSON", "Choose JSON file")}
-            <input className="hidden" accept=".json,application/json" type="file" onChange={(event) => void handleBackupFile(event.target.files?.[0])} />
+            <input className="hidden" accept=".json,application/json" disabled={restoringBackup} type="file" onChange={(event) => void handleBackupFile(event.target.files?.[0])} />
           </label>
         </div>
       </Card>
@@ -7792,8 +7943,8 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
                   )}
                 </p>
               </div>
-              <button className="rounded-2xl bg-[var(--lime)] px-6 py-4 font-bold text-[var(--ink)]" onClick={applyBackup} type="button">
-                {t("Restaurar respaldo", "Restore backup")}
+              <button className="rounded-2xl bg-[var(--lime)] px-6 py-4 font-bold text-[var(--ink)]" disabled={restoringBackup} onClick={() => void applyBackup()} type="button">
+                {restoringBackup ? t("Restaurando...", "Restoring...") : t("Restaurar respaldo", "Restore backup")}
               </button>
             </div>
           </Card>
