@@ -2528,7 +2528,7 @@ function ReceiptsView({
   const [editOpen, setEditOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const selected = state.receipts.find((receipt) => receipt.id === selectedId) ?? state.receipts[0];
-  const selectedSuggestion = receiptSuggestion?.receiptId === selected?.id ? receiptSuggestion.suggestion : null;
+  const selectedSuggestion = receiptSuggestion && receiptSuggestion.receiptId === selected?.id ? receiptSuggestion.suggestion : null;
   const pending = state.receipts.filter((receipt) => receipt.status === "needs_review" || receipt.status === "uploaded").length;
   const linkableTransactions = transactionsForMonth(state, state.activeMonth).filter((transaction) => !transaction.attachmentNames?.includes(selected?.fileName ?? ""));
 
