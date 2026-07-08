@@ -8,7 +8,7 @@ Aplicacion presupuestaria para planificar, registrar y cerrar finanzas personale
 - React + TypeScript
 - Tailwind CSS
 - Convex como backend operativo
-- ExcelJS para importar plantillas existentes
+- ExcelJS para exportar el mes a Excel
 
 ## Scripts
 
@@ -41,9 +41,8 @@ Las funciones backend iniciales viven en `convex/finance.ts`:
 - `saveSnapshot`
 - `addCategory`
 - `addTransaction`
-- `applyWorkbookImport`
 
-`src/lib/convex-adapter.ts` transforma el estado local/importado a payloads compatibles con esas mutaciones, evitando enviar IDs locales de la plantilla como si fueran IDs reales de Convex.
+`src/lib/convex-adapter.ts` transforma el estado local a payloads compatibles con esas mutaciones, evitando enviar IDs locales como si fueran IDs reales de Convex.
 
 ## IA
 
@@ -51,10 +50,8 @@ La captura inteligente llama `src/app/api/ai/capture/route.ts`, que usa la Respo
 
 ## Convex
 
-1. Crea o enlaza el proyecto con `npm run convex:dev`.
-2. Copia la URL generada por Convex a `.env.local` como `NEXT_PUBLIC_CONVEX_URL`.
-3. Abre Ajustes en la app y usa `Guardar en Convex` para persistir el snapshot del hogar.
-4. Usa `Cargar desde Convex` para reconstruir el workspace local desde el ultimo `householdId` guardado en este navegador.
+1. Crea o enlaza el proyecto con `npm run convex:dev` (escribe `NEXT_PUBLIC_CONVEX_URL` en `.env.local`).
+2. La sincronizacion es automatica: al iniciar sesion la app hidrata el estado desde Convex y cada cambio local se guarda solo (debounce ~1.2s) via `src/components/convex-sync.tsx`. Ya no existen los botones manuales `Guardar en Convex` / `Cargar desde Convex`.
 
 El snapshot incluye cuentas, categorias, movimientos, splits, recibos, comentarios, acciones de IA, reglas recurrentes, reglas locales, historial de reglas aplicadas, miembros, metas, deudas, patrimonio, preferencias de alertas y cierres mensuales guiados.
 

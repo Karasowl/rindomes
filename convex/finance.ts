@@ -301,28 +301,6 @@ const transactionInput = {
   attachmentIds: v.array(v.id("attachments")),
 };
 
-const importTransactionInput = {
-  type: transactionType,
-  date: v.string(),
-  description: v.string(),
-  categoryName: v.string(),
-  subcategory: v.optional(v.string()),
-  accountId: v.id("accounts"),
-  merchant: v.optional(v.string()),
-  person: v.optional(v.string()),
-  tags: v.array(v.string()),
-  note: v.optional(v.string()),
-  originalAmountCents: v.number(),
-  originalCurrency: currency,
-  baseAmountCents: v.number(),
-  baseCurrency: currency,
-  exchangeRate: v.number(),
-  exchangeRateDate: v.string(),
-  exchangeRateSource,
-  status: movementStatus,
-  attachmentIds: v.array(v.id("attachments")),
-};
-
 const accountSnapshotInput = {
   localId: v.string(),
   name: v.string(),
@@ -1263,71 +1241,6 @@ export const addTransaction = mutationGeneric({
       createdAt: now,
       updatedAt: now,
     });
-  },
-});
-
-export const applyWorkbookImport = mutationGeneric({
-  args: {
-    householdId: v.id("households"),
-    month: v.string(),
-    categories: v.array(v.object(categoryInput)),
-    transactions: v.array(v.object(importTransactionInput)),
-  },
-  handler: async (ctx, { householdId, month, categories, transactions }) => {
-    const now = Date.now();
-    const oldPlans = await ctx.db.query("monthlyPlans").withIndex("by_household_month", (q) => q.eq("householdId", householdId)).filter((q) => q.eq(q.field("month"), month)).collect();
-    const oldTransactions = await ctx.db.query("transactions").withIndex("by_household_month", (q) => q.eq("householdId", householdId)).filter((q) => q.eq(q.field("month"), month)).collect();
-
-    await Promise.all(oldPlans.map((plan) => ctx.db.delete(plan._id)));
-    await Promise.all(oldTransactions.map((transaction) => ctx.db.delete(transaction._id)));
-
-    const categoryIdsByName = new Map<string, string>();
-    for (const category of categories) {
-      const categoryId = await ctx.db.insert("categories", {
-        householdId,
-        group: category.group,
-        name: category.name,
-        subcategories: category.subcategories,
-        source: category.source,
-        isSystem: false,
-        archived: false,
-      });
-      categoryIdsByName.set(category.name.toLowerCase(), categoryId);
-      await ctx.db.insert("monthlyPlans", {
-        householdId,
-        month,
-        categoryId,
-        plannedCents: category.plannedCents,
-        rolloverCents: 0,
-      });
-    }
-
-    let importedTransactions = 0;
-    for (const transaction of transactions) {
-      const { categoryName, ...transactionFields } = transaction;
-      const categoryId = categoryIdsByName.get(categoryName.toLowerCase());
-      if (!categoryId) continue;
-
-      await ctx.db.insert("transactions", {
-        householdId,
-        month,
-        ...transactionFields,
-        categoryId,
-        createdAt: now,
-        updatedAt: now,
-      });
-      importedTransactions += 1;
-    }
-
-    await ctx.db.patch(householdId, {
-      activeMonth: month,
-      updatedAt: now,
-    });
-
-    return {
-      categories: categories.length,
-      transactions: importedTransactions,
-    };
   },
 });
 

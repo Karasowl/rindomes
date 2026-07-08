@@ -1,4 +1,3 @@
-import type { ImportedWorkbook } from "./excel-import";
 import type { AppState, Category, CurrencyCode, GroupKey, LineItem, Transaction, TransactionType } from "./types";
 
 export function categoryForConvex(category: Category) {
@@ -45,19 +44,6 @@ export function transactionForConvex(transaction: Transaction) {
       subcategory: split.subcategory,
       amountCents: split.amountCents,
       note: split.note,
-    })),
-  };
-}
-
-export function workbookImportForConvex(workbook: ImportedWorkbook) {
-  const categoriesById = new Map(workbook.categories.map((category) => [category.id, category.name]));
-
-  return {
-    month: workbook.activeMonth,
-    categories: workbook.categories.map(categoryForConvex),
-    transactions: workbook.transactions.map((transaction) => ({
-      ...transactionForConvex(transaction),
-      categoryName: categoriesById.get(transaction.categoryId) ?? transaction.description,
     })),
   };
 }

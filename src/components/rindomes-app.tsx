@@ -54,7 +54,6 @@ import { isConvexConfigured } from "@/lib/convex-client";
 import { LanguageToggle, useT } from "@/lib/i18n";
 import { quoteExchangeRate, supportedCurrencies } from "@/lib/currency";
 import { rebaseCurrency } from "@/lib/rebase-currency";
-import { parseRindoMesWorkbook, type ImportedWorkbook } from "@/lib/excel-import";
 import { annualRows, categoryActualCents, categoryById, categoryUsage, formatMoney, groups, plannedCentsFor, recentTransactions, summarize, toCents, transactionsForMonth } from "@/lib/finance";
 import { suggestFromNaturalText, type NaturalCaptureSuggestion } from "@/lib/natural-capture";
 import { createEmptyState } from "@/lib/onboarding";
@@ -7691,49 +7690,46 @@ function normalizeImportDate(value: string, activeMonth: string) {
 
 function ImportView({ state, setState }: { state: AppState; setState: Dispatch<SetStateAction<AppState>> }) {
   const { t } = useT();
-  const [preview, setPreview] = useState<ImportedWorkbook | null>(null);
+  const [backupPreview, setBackupPreview] = useState<AppState | null>(null);
   const [pasteText, setPasteText] = useState("");
   const [textPreview, setTextPreview] = useState<TextImportPreview | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "ready" | "applied" | "error">("idle");
-  const [message, setMessage] = useState(t("Selecciona un archivo Excel para importar presupuesto, categorías y movimientos.", "Select an Excel file to import your budget, categories, and transactions."));
+  const [message, setMessage] = useState(t("Selecciona un respaldo JSON exportado desde RindoMes para restaurarlo.", "Select a JSON backup exported from RindoMes to restore it."));
 
-  async function handleFile(file?: File) {
+  async function handleBackupFile(file?: File) {
     if (!file) return;
 
     try {
       setStatus("loading");
       setMessage(t(`Leyendo ${file.name}...`, `Reading ${file.name}...`));
-      const imported = await parseRindoMesWorkbook(file, {
-        activeMonth: state.activeMonth,
-        currency: state.currency,
-        accountId: state.accounts[0]?.id ?? "cash",
-      });
-      setPreview(imported);
+      const normalized = normalizeStoredState(JSON.parse(await file.text()));
+      if (!normalized) throw new Error(t("Este archivo no es un respaldo de RindoMes.", "This file is not a RindoMes backup."));
+      setBackupPreview(normalized);
       setStatus("ready");
-      setMessage(t(`Listo para importar ${imported.sourceMonthSheet}: ${imported.summary.categories} categorias y ${imported.summary.transactions} movimientos.`, `Ready to import ${imported.sourceMonthSheet}: ${imported.summary.categories} categories and ${imported.summary.transactions} transactions.`));
+      setMessage(t(
+        `Respaldo leído: ${normalized.categories.length} categorías, ${normalized.transactions.length} movimientos, ${normalized.monthlyPlans.length} planes mensuales.`,
+        `Backup read: ${normalized.categories.length} categories, ${normalized.transactions.length} transactions, ${normalized.monthlyPlans.length} monthly plans.`,
+      ));
     } catch (error) {
-      setPreview(null);
+      setBackupPreview(null);
       setStatus("error");
       setMessage(error instanceof Error ? error.message : t("No pude leer este archivo.", "I couldn't read this file."));
     }
   }
 
-  function applyImport() {
-    if (!preview) return;
+  function applyBackup() {
+    if (!backupPreview) return;
 
+    // The backup carries the household's finances; the session keeps its own identity,
+    // plan, and member roster so restoring never signs you out or downgrades you.
     setState((current) => ({
-      ...current,
-      categories: preview.categories,
-      monthlyPlans: [
-        ...current.monthlyPlans.filter((plan) => plan.month !== preview.activeMonth),
-        ...monthlyPlansFromCategories(preview.categories, preview.activeMonth),
-      ],
-      transactions: preview.transactions,
-      netWorth: preview.netWorth.length ? preview.netWorth : current.netWorth,
-      activeMonth: preview.activeMonth,
+      ...backupPreview,
+      user: current.user,
+      subscription: current.subscription,
+      members: current.members,
     }));
     setStatus("applied");
-    setMessage(t(`Importacion aplicada a ${preview.sourceMonthSheet}. El dashboard, plan y movimientos ahora salen del Excel.`, `Import applied to ${preview.sourceMonthSheet}. The dashboard, plan, and transactions now come from the Excel file.`));
+    setMessage(t("Respaldo restaurado. El plan, los movimientos y las cuentas ahora salen del archivo.", "Backup restored. Your plan, transactions, and accounts now come from the file."));
   }
 
   function previewTextImport() {
@@ -7761,55 +7757,44 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
   }
 
   return (
-    <ViewShell title={t("Importacion de datos", "Data import")} eyebrow={t("Excel a RindoMes", "Excel to RindoMes")} description={t("La plantilla original se convierte en categorias, presupuestos, movimientos y patrimonio.", "Your original template becomes categories, budgets, transactions, and net worth.")}>
+    <ViewShell title={t("Importacion de datos", "Data import")} eyebrow={t("Tus datos, de vuelta", "Your data, back in")} description={t("Restaura un respaldo completo de RindoMes o pega movimientos desde tu banco o una tabla.", "Restore a full RindoMes backup, or paste transactions from your bank or a table.")}>
       <Card>
         <div className="grid place-items-center rounded-3xl border border-dashed border-[var(--line)] bg-white/45 p-10 text-center">
           <FileSpreadsheet className="h-12 w-12 text-[var(--primary)]" />
-          <h3 className="serif mt-4 text-3xl font-bold">{t("Importar presupuesto Excel", "Import Excel budget")}</h3>
+          <h3 className="serif mt-4 text-3xl font-bold">{t("Restaurar respaldo", "Restore backup")}</h3>
           <p className="mt-2 max-w-lg text-sm text-[var(--text-muted)]">{message}</p>
           <label className="mt-6 inline-flex cursor-pointer items-center rounded-full bg-[var(--lime)] px-6 py-3 font-semibold text-[var(--ink)]">
             <Download className="mr-2 inline h-4 w-4" />
-            {status === "loading" ? t("Leyendo...", "Reading...") : t("Seleccionar archivo", "Choose file")}
-            <input className="hidden" accept=".xlsx,.xls" type="file" onChange={(event) => void handleFile(event.target.files?.[0])} />
+            {status === "loading" ? t("Leyendo...", "Reading...") : t("Seleccionar archivo JSON", "Choose JSON file")}
+            <input className="hidden" accept=".json,application/json" type="file" onChange={(event) => void handleBackupFile(event.target.files?.[0])} />
           </label>
         </div>
       </Card>
-      {preview && (
+      {backupPreview && (
         <div className="grid gap-4 lg:grid-cols-3">
           <Card>
-            <Metric label={t("Categorias importadas", "Categories imported")} value={String(preview.summary.categories)} />
+            <Metric label={t("Categorias", "Categories")} value={String(backupPreview.categories.length)} />
           </Card>
           <Card>
-            <Metric label={t("Movimientos reales", "Real transactions")} value={String(preview.summary.transactions)} />
+            <Metric label={t("Movimientos", "Transactions")} value={String(backupPreview.transactions.length)} />
           </Card>
           <Card>
-            <Metric label={t("Mes detectado", "Detected month")} value={preview.sourceMonthSheet} />
+            <Metric label={t("Cuentas", "Accounts")} value={String(backupPreview.accounts.length)} />
           </Card>
           <Card className="lg:col-span-3">
             <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
               <div>
-                <h3 className="serif text-xl font-bold">{t("Vista previa de importacion", "Import preview")}</h3>
+                <h3 className="serif text-xl font-bold">{t("Vista previa del respaldo", "Backup preview")}</h3>
                 <p className="mt-2 text-sm text-[var(--text-muted)]">
-                  {t(`Plan total ${formatMoney(preview.summary.plannedCents, state.currency)} · ingresos reales ${formatMoney(preview.summary.incomeCents, state.currency)} · egresos reales ${formatMoney(preview.summary.outflowCents, state.currency)}`, `Total plan ${formatMoney(preview.summary.plannedCents, state.currency)} · real income ${formatMoney(preview.summary.incomeCents, state.currency)} · real spending ${formatMoney(preview.summary.outflowCents, state.currency)}`)}
+                  {t(
+                    `Hogar "${backupPreview.householdName}" · moneda ${backupPreview.currency} · mes activo ${backupPreview.activeMonth} · ${backupPreview.monthlyPlans.length} planes mensuales. Restaurar reemplaza el plan, los movimientos y las cuentas actuales de este hogar.`,
+                    `Household "${backupPreview.householdName}" · currency ${backupPreview.currency} · active month ${backupPreview.activeMonth} · ${backupPreview.monthlyPlans.length} monthly plans. Restoring replaces this household's current plan, transactions, and accounts.`,
+                  )}
                 </p>
-                {preview.summary.warnings.map((warning) => (
-                  <p className="mt-2 text-sm font-semibold text-[var(--danger)]" key={warning}>{warning}</p>
-                ))}
               </div>
-              <button className="rounded-2xl bg-[var(--lime)] px-6 py-4 font-bold text-[var(--ink)]" onClick={applyImport} type="button">
-                {t("Aplicar importacion", "Apply import")}
+              <button className="rounded-2xl bg-[var(--lime)] px-6 py-4 font-bold text-[var(--ink)]" onClick={applyBackup} type="button">
+                {t("Restaurar respaldo", "Restore backup")}
               </button>
-            </div>
-            <div className="mt-6 grid gap-3 md:grid-cols-2">
-              {preview.categories.slice(0, 8).map((category) => (
-                <div className="rounded-2xl border border-[var(--line)] bg-white/45 p-4" key={category.id}>
-                  <p className="kicker">{groups.find((group) => group.key === category.group)?.label ?? category.group}</p>
-                  <div className="mt-2 flex items-center justify-between gap-4">
-                    <h4 className="font-semibold">{category.name}</h4>
-                    <span className="serif text-xl font-bold">{formatMoney(category.plannedCents, state.currency)}</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </Card>
         </div>
