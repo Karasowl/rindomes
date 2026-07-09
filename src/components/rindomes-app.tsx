@@ -231,7 +231,7 @@ function ToastViewport({ toasts }: { toasts: ToastItem[] }) {
         const toneClass = toast.tone === "success" ? "text-[var(--primary)]" : toast.tone === "error" ? "text-[var(--danger)]" : "text-[var(--text-muted)]";
         return (
           <div
-            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-white/85 px-4 py-3 text-sm font-semibold text-[var(--foreground)] shadow-[var(--shadow)] backdrop-blur-xl transition-all duration-200 ${toast.visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
+            className={`pointer-events-auto flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-[var(--foreground)] shadow-[var(--shadow)] backdrop-blur-xl transition-all duration-200 ${toast.visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
             key={toast.id}
             role="status"
           >
@@ -252,13 +252,13 @@ function NavButton({ viewKey, active, onClick }: { viewKey: View; active: boolea
     <button
       className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-[13px] transition ${
         active
-          ? "bg-[rgba(204,255,0,0.5)] font-bold text-[var(--ink)] shadow-sm"
-          : "text-[var(--text-muted)] hover:bg-white/60"
+          ? "bg-[var(--lime)] font-bold text-black shadow-sm"
+          : "text-[var(--on-dark-muted)] hover:bg-white/10 hover:text-[var(--on-dark)]"
       }`}
       onClick={onClick}
       type="button"
     >
-      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${active ? "text-black" : "text-[var(--on-dark-subtle)]"}`} />
       <span className="truncate">{navLabel(viewKey, t)}</span>
     </button>
   );
@@ -739,14 +739,16 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
       )}
       <TopBar state={state} setView={navigate} canGoBack={viewHistory.length > 0} onBack={goBack} authed={authed} authEmail={authEmail} showSyncStatus={convexConfigured && authed} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />
       <div className="mx-auto grid w-full max-w-[1280px] gap-6 px-5 pb-12 pt-5 md:grid-cols-[244px_minmax(0,1fr)] md:px-12 lg:px-16">
-        <aside className="app-scrollbar sticky top-24 hidden h-[calc(100vh-6.5rem)] flex-col gap-1.5 overflow-y-auto rounded-3xl border border-white/70 bg-white/55 p-2.5 backdrop-blur-xl md:flex">
+        {/* Panel tinta-oliva: el ancla oscura del layout. Sobre él, el item activo lima por fin
+            se LEE como activo (sobre crema, lima apenas se distinguía de un chip blanco). */}
+        <aside className="app-scrollbar sticky top-24 hidden h-[calc(100vh-6.5rem)] flex-col gap-1.5 overflow-y-auto rounded-3xl bg-[var(--ink-olive)] p-2.5 shadow-lg md:flex">
           <div className="flex flex-col gap-0.5">
             {primaryViews.map((viewKey) => (
               <NavButton key={viewKey} viewKey={viewKey} active={view === viewKey} onClick={() => navigate(viewKey)} />
             ))}
           </div>
           <button
-            className="mt-1 flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)] transition hover:bg-white/60"
+            className="mt-1 flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--on-dark-subtle)] transition hover:bg-white/10 hover:text-[var(--on-dark-muted)]"
             onClick={() => setShowAdvanced((open) => !open)}
             type="button"
             aria-expanded={showAdvanced || advancedViews.has(view)}
@@ -757,7 +759,7 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
           {(showAdvanced || advancedViews.has(view)) &&
             advancedGroups.map((group) => (
               <div className="flex flex-col gap-0.5" key={group.label}>
-                <p className="px-3 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{advancedGroupLabel(group.label, t)}</p>
+                <p className="px-3 pb-0.5 pt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--on-dark-subtle)]">{advancedGroupLabel(group.label, t)}</p>
                 {group.items.map((viewKey) => (
                   <NavButton key={viewKey} viewKey={viewKey} active={view === viewKey} onClick={() => navigate(viewKey)} />
                 ))}
@@ -766,18 +768,18 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
         </aside>
         <section className="min-w-0">
           {permissionMessage && (
-            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm font-semibold text-[var(--danger)]">
+            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm font-semibold text-[var(--danger)]">
               {permissionMessage}
             </div>
           )}
           {!authed && state.user.status === "signed_out" && view !== "account" && (
-            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm text-[var(--foreground)]">
+            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
               {t("Estas usando RindoMes sin sesion. Crea o inicia una cuenta local para guardar identidad, permisos y sincronizacion futura con Convex.", "You're using RindoMes without signing in. Create or sign in to a local account to save your identity, permissions, and future Convex sync.")}
               <button className="ml-3 font-bold text-[var(--primary)]" onClick={() => navigate("account")} type="button">{t("Abrir cuenta", "Open account")}</button>
             </div>
           )}
           {!authed && currentMember?.role === "viewer" && view !== "account" && (
-            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white/75 px-4 py-3 text-sm text-[var(--foreground)]">
+            <div className="mb-4 rounded-2xl border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--foreground)]">
               {t(`Vista de solo lectura para ${currentMember.name}. Puedes consultar y exportar, pero no cambiar datos financieros.`, `Read-only view for ${currentMember.name}. You can browse and export, but not change financial data.`)}
             </div>
           )}
@@ -870,7 +872,7 @@ function MonthSwitcher({ month, onChange }: { month: string; onChange: (month: s
   }
 
   return (
-    <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-white/70 bg-white/60 px-1 py-1 shadow-sm backdrop-blur">
+    <div className="flex shrink-0 items-center gap-0.5 rounded-full border border-white/70 bg-[var(--surface-soft)] px-1 py-1 shadow-sm backdrop-blur">
       <button
         type="button"
         aria-label={t("Mes anterior", "Previous month")}
@@ -1007,12 +1009,12 @@ function TopBar({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/40 bg-[rgba(254,248,245,0.82)] px-5 py-4 backdrop-blur-xl md:px-16">
+    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[rgba(254,248,245,0.9)] px-5 py-4 backdrop-blur-xl md:px-16">
       <div className="mx-auto flex max-w-[1280px] items-center justify-between">
         <div className="flex items-center gap-3">
           {canGoBack && (
             <button
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/70 text-[var(--foreground)] shadow-sm transition hover:bg-white"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-white"
               onClick={onBack}
               type="button"
               aria-label={t("Atrás", "Back")}
@@ -1020,7 +1022,7 @@ function TopBar({
               <ChevronLeft className="h-5 w-5" />
             </button>
           )}
-          <div className="grid h-10 w-10 place-items-center rounded-full border border-white/80 bg-[var(--lime)] text-sm font-bold shadow-sm">RM</div>
+          <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--ink-olive)] text-sm font-bold text-[var(--lime)] shadow-sm">RM</div>
           <h1 className="serif hidden text-3xl font-bold italic tracking-tight sm:block md:text-4xl">RindoMes</h1>
         </div>
         {/* Selector de mes GLOBAL: la app trabaja por mes, así que ver y cambiar el mes vive en la
@@ -1030,15 +1032,15 @@ function TopBar({
         <div className="flex items-center gap-2">
           <LanguageToggle />
           {showSyncStatus && <SyncStatusChip />}
-          <button className="hidden max-w-[180px] rounded-full bg-white/60 px-4 py-2 text-left text-xs font-semibold text-[var(--foreground)] transition hover:bg-white md:block" onClick={() => setView("account")} type="button">
+          <button className="hidden max-w-[180px] rounded-full bg-[var(--surface-soft)] px-4 py-2 text-left text-xs font-semibold text-[var(--foreground)] transition hover:bg-white md:block" onClick={() => setView("account")} type="button">
             <span className="block text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">{signedIn ? t("Sesión", "Session") : t("Sin sesión", "Signed out")}</span>
             <span className="block truncate">{accountLabel}</span>
           </button>
         <div className="relative">
-          <button className="relative rounded-full p-2 transition hover:bg-white/60" onClick={() => setOpen((current) => !current)} type="button" aria-label={t("Notificaciones", "Notifications")}>
+          <button className="relative rounded-full p-2 transition hover:bg-[var(--surface-muted)]" onClick={() => setOpen((current) => !current)} type="button" aria-label={t("Notificaciones", "Notifications")}>
             <Bell className="h-5 w-5" />
             {notifications.length > 0 && (
-              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--danger)] px-1 text-[10px] font-bold text-white">
+              <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[var(--warning-bar)] px-1 text-[10px] font-bold text-white">
                 {notifications.length}
               </span>
             )}
@@ -1054,10 +1056,10 @@ function TopBar({
               </div>
               <div className="mt-4 grid gap-3">
                 {notifications.map((notification) => (
-                  <button className="rounded-2xl bg-white/60 p-4 text-left transition hover:bg-white" key={notification.id} onClick={() => openNotification(notification.view)} type="button">
+                  <button className="rounded-2xl bg-[var(--surface-soft)] p-4 text-left transition hover:bg-white" key={notification.id} onClick={() => openNotification(notification.view)} type="button">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className={`text-xs font-bold uppercase tracking-[0.16em] ${notification.tone === "danger" ? "text-[var(--danger)]" : "text-[var(--primary)]"}`}>{notification.label}</p>
+                        <p className={`text-xs font-bold uppercase tracking-[0.16em] ${notification.tone === "danger" ? "text-[var(--warning)]" : "text-[var(--primary)]"}`}>{notification.label}</p>
                         <h3 className="mt-1 font-semibold">{notification.title}</h3>
                         <p className="mt-1 text-sm text-[var(--text-muted)]">{notification.subtitle}</p>
                       </div>
@@ -1095,7 +1097,7 @@ function SyncStatusChip() {
   const showText = sync.status !== "idle";
 
   return (
-    <div aria-atomic="true" aria-live="polite" className="inline-flex h-8 items-center gap-2 rounded-full bg-white/55 px-2.5 text-xs font-semibold text-[var(--text-muted)]" role="status" aria-label={label} title={label}>
+    <div aria-atomic="true" aria-live="polite" className="inline-flex h-8 items-center gap-2 rounded-full bg-[var(--surface-soft)] px-2.5 text-xs font-semibold text-[var(--text-muted)]" role="status" aria-label={label} title={label}>
       <span aria-hidden="true" className={`h-2.5 w-2.5 shrink-0 rounded-full ${dotClass}`} />
       {showText && <span className="hidden whitespace-nowrap md:inline">{label}</span>}
     </div>
@@ -1114,7 +1116,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           <div className="w-full rounded-t-3xl border-t border-white/80 bg-[rgba(254,248,245,0.97)] p-5 pb-8 shadow-2xl" onClick={(event) => event.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="serif text-2xl font-bold">{t("Todas las vistas", "All views")}</h2>
-              <button className="grid h-9 w-9 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-white/80" onClick={() => setMoreOpen(false)} type="button" aria-label={t("Cerrar", "Close")}>
+              <button className="grid h-9 w-9 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-[var(--surface-soft)]" onClick={() => setMoreOpen(false)} type="button" aria-label={t("Cerrar", "Close")}>
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -1124,7 +1126,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
                 const active = view === item.view;
                 return (
                   <button
-                    className={`flex flex-col items-center gap-1.5 rounded-2xl p-3 text-[11px] transition ${active ? "bg-[rgba(204,255,0,0.3)] font-semibold text-[var(--primary)]" : "text-[var(--text-muted)] hover:bg-white/60"}`}
+                    className={`flex flex-col items-center gap-1.5 rounded-2xl p-3 text-[11px] transition ${active ? "bg-[rgba(204,255,0,0.3)] font-semibold text-[var(--primary)]" : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"}`}
                     key={item.view}
                     onClick={() => { setView(item.view); setMoreOpen(false); }}
                     type="button"
@@ -1138,7 +1140,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           </div>
         </div>
       )}
-      <nav className="fixed bottom-5 left-1/2 z-40 grid w-[92%] max-w-md -translate-x-1/2 grid-cols-5 items-center rounded-full border border-white/80 bg-white/80 px-2 py-2 shadow-2xl backdrop-blur-2xl md:hidden">
+      <nav className="fixed bottom-5 left-1/2 z-40 grid w-[92%] max-w-md -translate-x-1/2 grid-cols-5 items-center rounded-full bg-[rgba(35,43,19,0.96)] px-2 py-2 shadow-2xl backdrop-blur-xl md:hidden">
         {(["home", "movements", "add", "review", "more"] as const).map((slot) => {
           if (slot === "add") {
             return (
@@ -1157,7 +1159,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           if (slot === "more") {
             return (
               <button
-                className={`flex flex-col items-center gap-0.5 text-[10px] ${moreOpen ? "font-semibold text-[var(--primary)]" : "text-[var(--text-muted)]"}`}
+                className={`flex flex-col items-center gap-0.5 text-[10px] ${moreOpen ? "font-semibold text-[var(--lime)]" : "text-[var(--on-dark-muted)]"}`}
                 key="more"
                 onClick={() => setMoreOpen(true)}
                 type="button"
@@ -1174,7 +1176,7 @@ function MobileNav({ view, setView }: { view: View; setView: (view: View) => voi
           const label = slot === "movements" ? t("Movs", "Txns") : slot === "review" ? t("Revisar", "Review") : navLabel(slot, t);
           return (
             <button
-              className={`flex flex-col items-center gap-0.5 text-[10px] ${active ? "text-[var(--primary)]" : "text-[var(--text-muted)]"}`}
+              className={`flex flex-col items-center gap-0.5 text-[10px] ${active ? "font-semibold text-[var(--lime)]" : "text-[var(--on-dark-muted)]"}`}
               key={slot}
               onClick={() => setView(slot)}
               type="button"
@@ -1258,11 +1260,18 @@ function HomeView({
   const spentShare = summary.income > 0 ? summary.outflow / summary.income : 0;
   const usesSpendingPlanHeadline = state.mode === "monthly-plan" && summary.plannedOutflow > 0;
   const headlineCents = usesSpendingPlanHeadline ? summary.plannedOutflow - summary.outflow : summary.remainder;
-  const headlineKicker = usesSpendingPlanHeadline ? t("PUEDES GASTAR TODAVÍA", "LEFT TO SPEND") : t("BALANCE DEL MES", "MONTH BALANCE");
+  const headlineNegative = headlineCents < 0;
+  // El kicker dice el ESTADO en palabras y el número da la magnitud, siempre en positivo
+  // para el modo plan ("TE PASASTE DEL PLAN · $7,320" y no "PUEDES GASTAR TODAVÍA ·
+  // -$7,320", que era una contradicción). La línea de abajo muestra la cuenta.
+  const headlineKicker = usesSpendingPlanHeadline
+    ? headlineNegative
+      ? t("TE PASASTE DEL PLAN", "OVER YOUR PLAN")
+      : t("PUEDES GASTAR TODAVÍA", "LEFT TO SPEND")
+    : t("BALANCE DEL MES", "MONTH BALANCE");
+  const headlineAmountCents = usesSpendingPlanHeadline ? Math.abs(headlineCents) : headlineCents;
   const headlineExplainer = usesSpendingPlanHeadline
-    ? headlineCents < 0
-      ? t(`Te pasaste del plan por ${formatMoney(Math.abs(headlineCents), state.currency)}`, `Over plan by ${formatMoney(Math.abs(headlineCents), state.currency)}`)
-      : t(`Plan de gastos ${formatMoney(summary.plannedOutflow, state.currency)} − gastado ${formatMoney(summary.outflow, state.currency)}`, `Spending plan ${formatMoney(summary.plannedOutflow, state.currency)} − spent ${formatMoney(summary.outflow, state.currency)}`)
+    ? t(`Plan de gastos ${formatMoney(summary.plannedOutflow, state.currency)} − gastado ${formatMoney(summary.outflow, state.currency)}`, `Spending plan ${formatMoney(summary.plannedOutflow, state.currency)} − spent ${formatMoney(summary.outflow, state.currency)}`)
     : t(`Ingresos ${formatMoney(summary.income, state.currency)} − gastos ${formatMoney(summary.outflow, state.currency)}`, `Income ${formatMoney(summary.income, state.currency)} − spending ${formatMoney(summary.outflow, state.currency)}`);
   const incomeRow = summary.plannedIncome > 0
     ? t(`Ingresos del mes: ${formatMoney(summary.income, state.currency)} de ${formatMoney(summary.plannedIncome, state.currency)} esperados`, `Month income: ${formatMoney(summary.income, state.currency)} of ${formatMoney(summary.plannedIncome, state.currency)} expected`)
@@ -1304,26 +1313,28 @@ function HomeView({
           </button>
         </div>
       )}
-      <section className="overflow-hidden rounded-3xl border border-white/60 bg-white/35 px-6 py-9 text-center backdrop-blur-xl">
-        <p className="kicker">{headlineKicker}</p>
-        <h2 className={`amount serif mx-auto mt-2 max-w-full break-words text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-none tracking-tight ${headlineCents < 0 ? "text-[var(--danger)]" : ""}`}>{formatMoney(headlineCents, state.currency)}</h2>
-        <p className={`mx-auto mt-3 max-w-2xl text-sm font-semibold ${headlineCents < 0 ? "text-[var(--danger)]" : "text-[var(--text-muted)]"}`}>{headlineExplainer}</p>
+      {/* Hero en tinta-oliva: el ancla emocional del Inicio. El número vive sobre oscuro
+          (crema si vas bien, ámbar si te pasaste — el rojo queda para errores de verdad). */}
+      <section className="overflow-hidden rounded-3xl bg-[var(--ink-olive)] px-6 py-9 text-center text-[var(--on-dark)] shadow-lg">
+        <p className="kicker text-[var(--lime)]">{headlineKicker}</p>
+        <h2 className={`amount serif mx-auto mt-2 max-w-full break-words text-[clamp(2.25rem,6vw,4.5rem)] font-bold leading-none tracking-tight ${headlineNegative ? "text-[var(--warning-on-dark)]" : "text-[var(--on-dark)]"}`}>{formatMoney(headlineAmountCents, state.currency)}</h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold text-[var(--on-dark-muted)]">{headlineExplainer}</p>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-[var(--line)] bg-white/65 px-4 py-1.5 text-xs font-semibold text-[var(--primary)]">
-            <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold text-[var(--on-dark-muted)]">
+            <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[var(--lime)]" />
             <span className="min-w-0 truncate">{incomeRow}</span>
           </span>
-          <button className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm transition hover:bg-white/80" onClick={onAddIncome} type="button">
+          <button className="shrink-0 rounded-full bg-white/15 px-3.5 py-1.5 text-xs font-bold text-[var(--on-dark)] transition hover:bg-white/25" onClick={onAddIncome} type="button">
             {t("Registrar ingreso", "Add income")}
           </button>
         </div>
-        <div className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[var(--lime)] bg-[rgba(204,255,0,0.2)] px-4 py-1.5 text-xs font-semibold text-[var(--primary)]">
-          <ArrowUpRight className="h-3.5 w-3.5" />
+        <div className="mt-3 inline-flex max-w-full items-center gap-1.5 rounded-full border border-[rgba(204,255,0,0.28)] bg-[rgba(204,255,0,0.1)] px-4 py-1.5 text-xs font-semibold text-[var(--lime)]">
+          <ArrowDownLeft className="h-3.5 w-3.5" />
           <span className="amount min-w-0 truncate">{t(`${formatMoney(summary.outflow, state.currency)} en gastos este mes`, `${formatMoney(summary.outflow, state.currency)} spent this month`)}</span>
         </div>
         {/* Una sola entrada de captura: registrar es la acción protagonista del Inicio. */}
         <div className="mt-6 flex justify-center">
-          <button className="inline-flex items-center gap-2 rounded-full bg-[var(--lime)] px-7 py-3 text-base font-bold text-black shadow-lg shadow-lime-300/30 transition hover:-translate-y-0.5" onClick={() => setView("add")} type="button">
+          <button className="inline-flex items-center gap-2 rounded-full bg-[var(--lime)] px-7 py-3 text-base font-bold text-black shadow-lg transition hover:-translate-y-0.5" onClick={() => setView("add")} type="button">
             <Plus className="h-5 w-5" />
             {t("Registrar gasto o ingreso", "Record expense or income")}
           </button>
@@ -1338,7 +1349,7 @@ function HomeView({
               <p className="kicker">{formatMonthLabel(state.activeMonth, t("es", "en") as "es" | "en")} · {modeLabel(state.mode, t)}</p>
               <h3 className="serif mt-1 text-xl font-bold">{t("En qué se va tu plata", "Where your money goes")}</h3>
             </div>
-            <button className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm transition hover:bg-white/80" onClick={() => setView("reports")} type="button">
+            <button className="shrink-0 rounded-full bg-white px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] shadow-sm transition hover:bg-[var(--surface-soft)]" onClick={() => setView("reports")} type="button">
               {t("Ver reportes", "Reports")}
             </button>
           </div>
@@ -1347,14 +1358,18 @@ function HomeView({
               <div key={item.id}>
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate font-semibold">{item.name}</span>
-                  <span className="amount serif shrink-0 whitespace-nowrap text-lg font-bold">{formatMoney(item.spent, state.currency)}</span>
+                  <span className="amount shrink-0 whitespace-nowrap text-base font-bold">{formatMoney(item.spent, state.currency)}</span>
                 </div>
                 <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--surface-soft)]">
                   <div className="h-full rounded-full bg-[var(--primary)]" style={{ width: `${Math.min(100, Math.round((item.spent / topSpent) * 100))}%` }} />
                 </div>
-                {item.detail && (
+                {/* Si la descripción del mayor movimiento es literalmente el nombre de la categoría
+                    ("comida · el mayor: comida"), repetirla es ruido: mostramos solo el conteo. */}
+                {item.detail && item.detail.trim().toLowerCase() !== item.name.trim().toLowerCase() ? (
                   <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{item.count > 1 ? t(`${item.count} movs · el mayor: ${item.detail}`, `${item.count} txns · biggest: ${item.detail}`) : item.detail}</p>
-                )}
+                ) : item.count > 1 ? (
+                  <p className="mt-1 truncate text-xs text-[var(--text-muted)]">{t(`${item.count} movimientos`, `${item.count} transactions`)}</p>
+                ) : null}
               </div>
             ))}
             {!topSpending.length && (
@@ -1373,7 +1388,7 @@ function HomeView({
           </div>
           <div className="mt-4 space-y-2.5">
             {observations.map((text, index) => (
-              <div className="rounded-2xl bg-white/55 p-4 text-sm font-medium text-[var(--foreground)]" key={index}>{text}</div>
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm font-medium text-[var(--foreground)]" key={index}>{text}</div>
             ))}
             {!observations.length && (
               <EmptyState title={t("Aún sin lecturas", "Nothing to read yet")} subtitle={t("Con unos cuantos movimientos la app empieza a decirte qué es inusual, qué se repite y dónde podrías ajustar.", "With a few transactions the app starts telling you what's unusual, what repeats, and where you could adjust.")} />
@@ -1389,7 +1404,7 @@ function HomeView({
             <div className="mt-4">
               <EmptyState title={t("Registra tu primer movimiento", "Record your first transaction")} subtitle={t("Registra tus ingresos y gastos para ver tu situación financiera actualizada.", "Record your income and expenses to see your finances update in real time.")}>
                 <button className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-black transition hover:brightness-95" onClick={() => setView("add")} type="button">{t("Añadir movimiento", "Add transaction")}</button>
-                <button className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[var(--primary)] shadow-sm transition hover:bg-white/80" onClick={() => setView("import")} type="button">{t("Importar datos", "Import data")}</button>
+                <button className="rounded-full bg-white px-5 py-2.5 text-sm font-bold text-[var(--primary)] shadow-sm transition hover:bg-[var(--surface-soft)]" onClick={() => setView("import")} type="button">{t("Importar datos", "Import data")}</button>
               </EmptyState>
             </div>
           )}
@@ -1399,11 +1414,11 @@ function HomeView({
           <SectionHeader title={t("Necesita tu atención", "Needs your attention")} action={t("Abrir", "Open")} onAction={() => setView("review")} />
           <div className="mt-4 space-y-2.5">
             {state.review.slice(0, 3).map((item) => (
-              <div className="rounded-2xl bg-white/55 p-4" key={item.id}>
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4" key={item.id}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--text-muted)]">{reviewReasonLabel(item.reason)}</p>
                 <div className="mt-1.5 flex items-center justify-between gap-3">
                   <span className="min-w-0 truncate font-semibold">{item.title}</span>
-                  <span className="amount serif shrink-0 whitespace-nowrap text-lg font-bold">{formatMoney(item.amountCents, state.currency)}</span>
+                  <span className="amount shrink-0 whitespace-nowrap text-base font-bold">{formatMoney(item.amountCents, state.currency)}</span>
                 </div>
               </div>
             ))}
@@ -1608,7 +1623,7 @@ function SetupView({
                   key={option.id}
                   type="button"
                   onClick={() => setPath(option.id)}
-                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${selected ? "border-[var(--primary)] bg-[rgba(204,255,0,0.12)]" : "border-[var(--line)] bg-white/55 hover:bg-white"}`}
+                  className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition ${selected ? "border-[var(--primary)] bg-[rgba(204,255,0,0.12)]" : "border-[var(--line)] bg-[var(--surface-soft)] hover:bg-white"}`}
                   aria-pressed={selected}
                 >
                   <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${selected ? "border-[var(--primary)]" : "border-slate-300"}`} aria-hidden="true">
@@ -1631,7 +1646,7 @@ function SetupView({
             <Select label={t("Moneda base", "Base currency")} value={draft.currency} options={supportedCurrencies} render={currencyLabel} onChange={(value) => setDraft((current) => ({ ...current, currency: value as CurrencyCode }))} />
             <label className="grid gap-2 text-sm font-semibold">
               {t("Mes activo", "Active month")}
-              <input className="field bg-white/40 text-[var(--text-muted)]" value={draft.activeMonth} readOnly aria-readonly="true" />
+              <input className="field bg-[var(--surface-soft)] text-[var(--text-muted)]" value={draft.activeMonth} readOnly aria-readonly="true" />
             </label>
           </div>
           <details className="mt-4">
@@ -1747,7 +1762,7 @@ function SpacesView({ state, setState }: { state: AppState; setState: Dispatch<S
             return (
               <div
                 key={plan}
-                className={`flex items-start gap-3 rounded-2xl border p-4 transition ${selected ? "border-[var(--primary)] bg-[rgba(204,255,0,0.12)]" : "border-[var(--line)] bg-white/55"}`}
+                className={`flex items-start gap-3 rounded-2xl border p-4 transition ${selected ? "border-[var(--primary)] bg-[rgba(204,255,0,0.12)]" : "border-[var(--line)] bg-[var(--surface-soft)]"}`}
               >
                 <span className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 ${selected ? "border-[var(--primary)]" : "border-slate-300"}`} aria-hidden="true">
                   {selected && <span className="h-2.5 w-2.5 rounded-full bg-[var(--primary)]" />}
@@ -1862,13 +1877,32 @@ function PlanView({
     setState((current) => withMonthlyCategoryPlan(current, categoryId, plannedCentsFor(current, categoryId) + summary.assignable));
   }
 
+  // La cifra grande del Plan usa el MISMO concepto que el titular del Inicio (plan de gastos
+  // − gastado, en positivo y con el estado en palabras). Antes mostraba ingreso esperado −
+  // gastado sin etiqueta: un número gigante que no cuadraba con nada de lo visible.
+  const planLeftCents = summary.plannedOutflow - summary.outflow;
+  const planOver = planLeftCents < 0;
+  const planHeadlineLabel = state.mode === "zero"
+    ? t("Por asignar", "To assign")
+    : state.mode === "tracker"
+      ? t("Balance del mes", "Month balance")
+      : planOver
+        ? t("Te pasaste del plan", "Over your plan")
+        : t("Puedes gastar todavía", "Left to spend");
+  const planHeadlineCents = state.mode === "zero" ? summary.assignable : state.mode === "tracker" ? summary.remainder : Math.abs(planLeftCents);
+  const planHeadlineExplainer = state.mode === "monthly-plan"
+    ? t(`Plan de gastos ${formatMoney(summary.plannedOutflow, state.currency)} − gastado ${formatMoney(summary.outflow, state.currency)}`, `Spending plan ${formatMoney(summary.plannedOutflow, state.currency)} − spent ${formatMoney(summary.outflow, state.currency)}`)
+    : null;
+  const planHeadlineWarning = (state.mode === "zero" && summary.assignable !== 0) || (state.mode === "monthly-plan" && planOver);
+
   return (
     <ViewShell title={t("Plan mensual", "Monthly plan")} eyebrow={state.activeMonth} description={t("Define lo esperado, mira lo real y corrige antes del cierre.", "Set what you expect, watch what's real, and adjust before the close.")}>
       <Card>
-        <p className="kicker">{modeLabel(state.mode, t)}</p>
-        <h2 className={`amount serif mt-2 max-w-full break-words text-6xl font-bold ${state.mode === "zero" && summary.assignable !== 0 ? "text-[var(--danger)]" : ""}`}>
-          {state.mode === "zero" ? formatMoney(summary.assignable, state.currency) : state.mode === "tracker" ? formatMoney(summary.remainder, state.currency) : formatMoney(summary.budgetRemaining, state.currency)}
+        <p className="kicker">{modeLabel(state.mode, t)} · {planHeadlineLabel}</p>
+        <h2 className={`amount serif mt-2 max-w-full break-words text-6xl font-bold ${planHeadlineWarning ? "text-[var(--warning)]" : ""}`}>
+          {formatMoney(planHeadlineCents, state.currency)}
         </h2>
+        {planHeadlineExplainer && <p className="mt-2 text-sm font-semibold text-[var(--text-muted)]">{planHeadlineExplainer}</p>}
         <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
           <Metric label={t("Planificado", "Planned")} value={formatMoney(summary.plannedOutflow, state.currency)} />
           <Metric label={t("Gastado", "Spent")} value={formatMoney(summary.outflow, state.currency)} />
@@ -1882,7 +1916,7 @@ function PlanView({
           <h3 className="serif text-xl font-bold tracking-tight">{t(`Categorías (${usage.length})`, `Categories (${usage.length})`)}</h3>
           {state.mode !== "tracker" && usage.length > 1 && (
             <button
-              className="shrink-0 rounded-full border border-[var(--line)] bg-white px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-white/70"
+              className="shrink-0 rounded-full border border-[var(--line)] bg-white px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--surface-muted)]"
               onClick={() => setMoveOpen(true)}
               type="button"
             >
@@ -1896,13 +1930,13 @@ function PlanView({
               const hasSpendWithoutBudget = item.plannedCents === 0 && item.spent > 0;
               return (
                 <button
-                  className="group rounded-2xl border border-[var(--line)] bg-white/45 px-4 py-3 text-left transition hover:border-[var(--primary)] hover:bg-white/70"
+                  className="group rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-left transition hover:border-[var(--primary)] hover:bg-[var(--surface-muted)]"
                   key={item.id}
                   onClick={() => openCategory(item.id)}
                   type="button"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--text-muted)]">
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white text-[var(--text-muted)]">
                       <WalletCards className="h-5 w-5" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -1914,16 +1948,16 @@ function PlanView({
                         )}
                       </p>
                     </div>
-                    <span className={`shrink-0 whitespace-nowrap text-sm font-bold leading-tight ${hasSpendWithoutBudget ? "text-[var(--text-muted)]" : item.ratio > 1 ? "text-[var(--danger)]" : "text-[var(--ink)]"}`}>
+                    <span className={`shrink-0 whitespace-nowrap text-sm font-bold leading-tight ${hasSpendWithoutBudget ? "text-[var(--text-muted)]" : item.ratio > 1 ? "text-[var(--warning)]" : "text-[var(--ink)]"}`}>
                       {hasSpendWithoutBudget ? t("sin presupuesto", "no budget") : `${Math.round(item.ratio * 100)}%`}
                     </span>
                     <ChevronRight className="h-5 w-5 shrink-0 text-[var(--text-subtle)] transition group-hover:text-[var(--text-muted)]" />
                   </div>
-                  <div className={`mt-3 h-1.5 rounded-full ${hasSpendWithoutBudget ? "border border-dashed border-[var(--text-subtle)] bg-white/50" : "overflow-hidden bg-[var(--surface-soft)]"}`}>
-                    {!hasSpendWithoutBudget && (
-                      <div className={`h-full rounded-full ${item.ratio > 1 ? "bg-[var(--danger)]" : "bg-[var(--primary)]"}`} style={{ width: `${Math.max(4, Math.min(item.ratio * 100, 100))}%` }} />
-                    )}
-                  </div>
+                  {hasSpendWithoutBudget ? (
+                    <div className="mt-3 h-1.5 rounded-full border border-dashed border-[var(--text-subtle)] bg-[var(--surface-soft)]" />
+                  ) : (
+                    <Progress className="mt-3" value={item.ratio} />
+                  )}
                 </button>
               );
             })
@@ -1944,7 +1978,7 @@ function PlanView({
         footer={
           <>
             <button
-              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-white/70"
+              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)]"
               onClick={() => setSelectedCategoryId(null)}
               type="button"
             >
@@ -1966,13 +2000,13 @@ function PlanView({
             <div>
               <p className="text-sm text-[var(--text-muted)]">{subcategoryPreview(selectedCategory?.subcategories, t("Sin datos", "No data"))}</p>
               {selectedHasSpendWithoutBudget ? (
-                <div className="mt-3 h-2 rounded-full border border-dashed border-[var(--text-subtle)] bg-white/50" />
+                <div className="mt-3 h-2 rounded-full border border-dashed border-[var(--text-subtle)] bg-[var(--surface-soft)]" />
               ) : (
                 <Progress className="mt-3" value={selectedUsage.ratio} danger={selectedUsage.ratio > 1} />
               )}
               <div className="mt-2 flex justify-between text-sm text-[var(--text-muted)]">
                 <span>{t(`${formatMoney(selectedUsage.spent, state.currency)} de ${formatMoney(selectedUsage.plannedCents, state.currency)}`, `${formatMoney(selectedUsage.spent, state.currency)} of ${formatMoney(selectedUsage.plannedCents, state.currency)}`)}</span>
-                <span className={selectedHasSpendWithoutBudget ? "font-semibold text-[var(--text-muted)]" : selectedUsage.ratio > 1 ? "font-bold text-[var(--danger)]" : "font-semibold"}>
+                <span className={selectedHasSpendWithoutBudget ? "font-semibold text-[var(--text-muted)]" : selectedUsage.ratio > 1 ? "font-bold text-[var(--warning)]" : "font-semibold"}>
                   {selectedHasSpendWithoutBudget ? t("sin presupuesto", "no budget") : `${Math.round(selectedUsage.ratio * 100)}%`}
                 </span>
               </div>
@@ -1990,7 +2024,7 @@ function PlanView({
             />
             {state.mode === "zero" && summary.assignable > 0 && (
               <button
-                className="rounded-full border border-[var(--line)] bg-white px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-white/70"
+                className="rounded-full border border-[var(--line)] bg-white px-4 py-2 text-xs font-bold text-[var(--primary)] transition hover:bg-[var(--surface-muted)]"
                 onClick={() => {
                   assignRemainingToCategory(selectedUsage.id);
                   setSelectedCategoryId(null);
@@ -2008,7 +2042,7 @@ function PlanView({
               <div className="mt-3 grid gap-2">
                 {selectedMovements.length ? (
                   selectedMovements.map((transaction) => (
-                    <div className="grid gap-2 rounded-2xl border border-[var(--line)] bg-white/50 p-3 sm:grid-cols-[1fr_auto] sm:items-center" key={transaction.id}>
+                    <div className="grid gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-3 sm:grid-cols-[1fr_auto] sm:items-center" key={transaction.id}>
                       <div className="min-w-0">
                         <p className="kicker">{transaction.date} · {transactionStatusLabel(transaction.status)}</p>
                         <h5 className="truncate font-semibold">{transaction.description}</h5>
@@ -2018,7 +2052,7 @@ function PlanView({
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-6 text-center text-sm text-[var(--text-muted)]">
+                  <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-6 text-center text-sm text-[var(--text-muted)]">
                     {t(`Esta categoria no tiene movimientos en ${state.activeMonth}.`, `This category has no transactions in ${state.activeMonth}.`)}
                   </div>
                 )}
@@ -2036,7 +2070,7 @@ function PlanView({
         footer={
           <>
             <button
-              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-white/70"
+              className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold text-[var(--foreground)] transition hover:bg-[var(--surface-muted)]"
               onClick={() => setMoveOpen(false)}
               type="button"
             >
@@ -2249,8 +2283,8 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
             sin saltar entre pantallas distintas del menú. */}
         <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-[var(--surface-soft)] p-1.5">
           <span className="rounded-xl bg-[var(--lime)] px-2 py-2.5 text-center text-xs font-bold text-black shadow-sm">{t("Escribir", "Type")}</span>
-          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)] transition hover:bg-white/70" onClick={() => setView("ai")} type="button">{t("Con IA", "With AI")}</button>
-          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)] transition hover:bg-white/70" onClick={() => setView("receipt-capture")} type="button">{t("Recibo", "Receipt")}</button>
+          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--surface-muted)]" onClick={() => setView("ai")} type="button">{t("Con IA", "With AI")}</button>
+          <button className="rounded-xl px-2 py-2.5 text-center text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--surface-muted)]" onClick={() => setView("receipt-capture")} type="button">{t("Recibo", "Receipt")}</button>
         </div>
         {/* Primario · Monto + Categoría */}
         <Card>
@@ -2258,7 +2292,7 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
           <div className="grid grid-cols-4 gap-1 rounded-2xl bg-[var(--surface-soft)] p-1.5 lg:grid-cols-7">
             {captureTypes.map((type) => (
               <button
-                className={`rounded-xl px-2 py-2 text-xs font-semibold transition ${form.type === type ? "bg-[var(--lime)] text-black shadow-sm" : "text-[var(--text-muted)] hover:bg-white/70"}`}
+                className={`rounded-xl px-2 py-2 text-xs font-semibold transition ${form.type === type ? "bg-[var(--lime)] text-black shadow-sm" : "text-[var(--text-muted)] hover:bg-[var(--surface-muted)]"}`}
                 key={type}
                 onClick={() => {
                   const linked = type === "refund" ? refundableTransactions[0] : undefined;
@@ -2298,7 +2332,7 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
           {frequentAmounts.length > 0 && (
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {frequentAmounts.map((amount) => (
-                <button className="rounded-full border border-[var(--line)] bg-white/70 px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] transition hover:bg-white" key={amount} onClick={() => setForm((current) => ({ ...current, amount: (amount / 100).toFixed(2) }))} type="button">
+                <button className="rounded-full border border-[var(--line)] bg-white px-3.5 py-1.5 text-xs font-bold text-[var(--primary)] transition hover:bg-white" key={amount} onClick={() => setForm((current) => ({ ...current, amount: (amount / 100).toFixed(2) }))} type="button">
                   {formatMoney(amount, form.currency)}
                 </button>
               ))}
@@ -2310,7 +2344,7 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
             {recentCategoryIds.length > 0 && (
               <div className="mb-3 flex flex-wrap gap-2">
                 {recentCategoryIds.map((categoryId) => (
-                  <button className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${form.categoryId === categoryId ? "border-[var(--lime)] bg-[rgba(204,255,0,0.25)] text-[var(--primary)]" : "border-[var(--line)] bg-white/70 text-[var(--primary)] hover:bg-white"}`} key={categoryId} onClick={() => {
+                  <button className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${form.categoryId === categoryId ? "border-[var(--lime)] bg-[rgba(204,255,0,0.25)] text-[var(--primary)]" : "border-[var(--line)] bg-white text-[var(--primary)] hover:bg-white"}`} key={categoryId} onClick={() => {
                     const category = categoryById(state.categories, categoryId);
                     setForm((current) => ({ ...current, categoryId, subcategory: category?.subcategories[0] ?? current.subcategory }));
                   }} type="button">
@@ -2384,7 +2418,7 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
               {t("Nota", "Note")}
               <textarea className="field min-h-24" value={form.note} onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))} />
             </label>
-            <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-[var(--line)] bg-white/45 p-4 text-sm font-semibold">
+            <label className="flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm font-semibold">
               <span className="inline-flex items-center gap-2"><Upload className="h-4 w-4" /> {form.attachmentNames.length > 0 ? t(`${form.attachmentNames.length} archivo(s)`, `${form.attachmentNames.length} file(s)`) : t("Fotos o recibos", "Photos or receipts")}</span>
               <input className="hidden" type="file" multiple onChange={(event) => setForm((current) => ({ ...current, attachmentNames: Array.from(event.target.files ?? []).map((file) => file.name) }))} />
             </label>
@@ -2417,7 +2451,7 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
 
             {/* Guía según el tipo + ajuste de saldo */}
             {form.type === "transfer" && creditAccounts.length > 0 && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-muted)]">
                 <p className="font-semibold text-[var(--foreground)]">{t("Pago de tarjeta", "Card payment")}</p>
                 <p className="mt-1">{t("Registra el pago como transferencia a la cuenta de crédito para no duplicar el gasto.", "Record the payment as a transfer to the credit account so you don't double-count the expense.")}</p>
                 <button
@@ -2439,14 +2473,14 @@ function AddMovementView({ state, onSave, setView, initialType = "expense" }: { 
               </div>
             )}
             {["debt_payment", "saving", "investment"].includes(form.type) && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-muted)]">
                 {form.type === "debt_payment" && t("Cuenta como pago de deuda. Si pagas tarjeta por compras ya registradas, usa Transferencia.", "Counts as a debt payment. If you're paying a card for purchases already recorded, use Transfer.")}
                 {form.type === "saving" && t("Cuenta dentro de tu ahorro real del mes.", "Counts toward your real savings for the month.")}
                 {form.type === "investment" && t("Cuenta como inversión real y puede vincularse con patrimonio neto.", "Counts as a real investment and can link to net worth.")}
               </div>
             )}
             {form.type === "refund" && linkedTransaction && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-muted)]">
                 {t("Reduce el gasto real de", "Reduces the real spending of")} {categoryById(state.categories, linkedTransaction.categoryId)?.name ?? t("la categoría original", "the original category")}.
               </div>
             )}
@@ -2627,7 +2661,7 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
               </button>
             </div>
           )}
-          {aiStatus && <p className="mt-3 rounded-2xl bg-white/55 px-4 py-3 text-sm text-[var(--text-muted)]">{aiStatus}</p>}
+          {aiStatus && <p className="mt-3 rounded-2xl bg-[var(--surface-soft)] px-4 py-3 text-sm text-[var(--text-muted)]">{aiStatus}</p>}
 
           <details className="mt-4 rounded-2xl bg-[var(--surface-soft)] p-4">
             <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--primary)]">{t("Opciones avanzadas", "Advanced options")}</summary>
@@ -2641,7 +2675,7 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
               {t("Tu propia clave IA (avanzado)", "Your own AI key (advanced)")}
               <input className="field" value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder={t("sk-... (opcional, queda solo en este dispositivo)", "sk-... (optional, stays only on this device)")} type="password" />
             </label>
-            <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-[var(--line)] bg-white/45 p-4 text-sm font-semibold">
+            <label className="mt-4 flex cursor-pointer items-center justify-between rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm font-semibold">
               <span className="inline-flex items-center gap-2"><Upload className="h-4 w-4" /> {t("Recibos o screenshots para revisar", "Receipts or screenshots to review")}</span>
               <input className="hidden" type="file" multiple onChange={(event) => setReceiptNames(Array.from(event.target.files ?? []).map((file) => file.name))} />
             </label>
@@ -2656,7 +2690,7 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
             <div className="mt-5 grid gap-4">
               <Metric label={t("Confianza", "Confidence")} value={`${Math.round(suggestion.confidence * 100)}%`} tone={suggestion.needsReview ? "bad" : "good"} />
               <ListCard title={suggestion.description} subtitle={`${categoryById(state.categories, suggestion.categoryId)?.name ?? t("Categoria", "Category")} · ${state.accounts.find((account) => account.id === suggestion.accountId)?.name ?? t("Cuenta", "Account")}`} value={formatMoney(toCents(suggestion.amount), suggestion.currency)} />
-              <div className="rounded-2xl bg-white/50 p-4">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                 <p className="font-semibold">{t("Razones", "Reasons")}</p>
                 <ul className="mt-2 space-y-1 text-sm text-[var(--text-muted)]">
                   {suggestion.reasons.map((reason) => <li key={reason}>{reason}</li>)}
@@ -2673,7 +2707,7 @@ function AIView({ state, setState, onSave, aiAvailable, onOpenPaywall }: { state
         <h3 className="serif text-xl font-bold">{t("Historial IA", "AI history")}</h3>
         <div className="mt-5 grid gap-3">
           {state.aiActions.slice(0, 8).map((action) => (
-            <div className="rounded-2xl border border-[var(--line)] bg-white/55 p-4" key={action.id}>
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4" key={action.id}>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="kicker">{aiProviderLabel(action.provider)} · {aiActionKindLabel(action.kind)} · {aiActionStatusLabel(action.status)}</p>
@@ -2923,7 +2957,7 @@ function ReceiptsView({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
-              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-6 py-4 text-sm font-bold text-[var(--primary)] transition hover:bg-white/80"
+              className="inline-flex items-center justify-center rounded-2xl border border-[var(--line)] bg-white px-6 py-4 text-sm font-bold text-[var(--primary)] transition hover:bg-[var(--surface-soft)]"
               onClick={() => setView("receipt-capture")}
               type="button"
             >
@@ -3013,7 +3047,7 @@ function ReceiptsView({
             <Input label={t("Monto", "Amount")} value={selected.amountCents ? String(selected.amountCents / 100) : ""} onChange={(value) => updateReceipt(selected.id, { amountCents: toCents(value) })} />
 
             {selectedSuggestion && (
-              <div className="rounded-2xl border border-[var(--line)] bg-white/60 p-4 text-sm">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm">
                 <p className="kicker">{t("Sugerido por IA", "AI suggestion")}</p>
                 <div className="mt-2 flex items-start justify-between gap-3">
                   <div>
@@ -3027,7 +3061,7 @@ function ReceiptsView({
             )}
 
             {selected.transactionId && (
-              <div className="rounded-2xl bg-white/60 p-4 text-sm text-[var(--text-muted)]">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-muted)]">
                 {t("Vinculado a", "Linked to")} {state.transactions.find((transaction) => transaction.id === selected.transactionId)?.description ?? selected.transactionId}.
               </div>
             )}
@@ -3387,7 +3421,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
               ? t("Mostrando todos los meses", "Showing all months")
               : t(`Mostrando ${formatMonthLabel(state.activeMonth, lang)}`, `Showing ${formatMonthLabel(state.activeMonth, lang)}`)}
           </span>
-          <button type="button" onClick={() => setShowAllMonths((value) => !value)} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 font-semibold text-[var(--primary)] transition hover:bg-white/70">
+          <button type="button" onClick={() => setShowAllMonths((value) => !value)} className="rounded-full border border-[var(--line)] bg-white px-3 py-1 font-semibold text-[var(--primary)] transition hover:bg-[var(--surface-muted)]">
             {showAllMonths ? t("Ver solo este mes", "Only this month") : t("Ver todos los meses", "All months")}
           </button>
         </div>
@@ -3395,7 +3429,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
           <div className="min-w-0 divide-y divide-[var(--line)]">
             {filtered.map((transaction) => (
               <button
-                className={`grid w-full min-w-0 gap-3 py-4 text-left sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${selected?.id === transaction.id ? "rounded-2xl bg-white/45 px-3" : ""}`}
+                className={`grid w-full min-w-0 gap-3 py-4 text-left sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center ${selected?.id === transaction.id ? "rounded-2xl bg-[var(--surface-soft)] px-3" : ""}`}
                 key={transaction.id}
                 onClick={() => setSelectedId(transaction.id)}
                 type="button"
@@ -3404,7 +3438,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
               </button>
             ))}
             {!filtered.length && (
-              <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/45 p-6 text-sm text-[var(--text-muted)]">
+              <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-6 text-sm text-[var(--text-muted)]">
                 <p className="font-semibold text-[var(--foreground)]">{t("No hay movimientos con estos filtros.", "No transactions match these filters.")}</p>
                 <p className="mt-1">{t("Cambia los filtros o añade un movimiento nuevo.", "Change the filters or add a new transaction.")}</p>
                 <button className="mt-4 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-black" onClick={() => setView("add")} type="button">{t("Añadir movimiento", "Add transaction")}</button>
@@ -3412,7 +3446,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
             )}
           </div>
           {selected && (
-            <div className="min-w-0 rounded-3xl border border-[var(--line)] bg-white/45 p-5">
+            <div className="min-w-0 rounded-3xl border border-[var(--line)] bg-[var(--surface-soft)] p-5">
               {/* Glance: el número primero, luego descripción y categoría. Todo lo demás vive en el Modal de edición. */}
               <p className="kicker">{transactionStatusLabel(selected.status)}</p>
               <p className={`amount serif mt-1 max-w-full break-words text-[clamp(2rem,5vw,3rem)] font-bold leading-none ${selected.type === "income" || selected.type === "transfer" || selected.type === "refund" ? "text-[var(--primary)]" : ""}`}>
@@ -3427,13 +3461,13 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
               <div className="mt-5 grid gap-2">
                 <button className="rounded-2xl bg-[var(--lime)] px-4 py-3 text-sm font-bold text-black" onClick={markSelectedReviewed} type="button">{t("Marcar revisado", "Mark reviewed")}</button>
                 <div className="grid grid-cols-2 gap-2">
-                  <button className="rounded-2xl bg-white px-4 py-3 text-sm font-bold transition hover:bg-white/70" onClick={() => setEditOpen(true)} type="button">{t("Editar", "Edit")}</button>
-                  <button className="rounded-2xl bg-white px-4 py-3 text-sm font-bold transition hover:bg-white/70" onClick={() => { setSplitError(""); setSplitsOpen(true); }} type="button">
+                  <button className="rounded-2xl bg-white px-4 py-3 text-sm font-bold transition hover:bg-[var(--surface-muted)]" onClick={() => setEditOpen(true)} type="button">{t("Editar", "Edit")}</button>
+                  <button className="rounded-2xl bg-white px-4 py-3 text-sm font-bold transition hover:bg-[var(--surface-muted)]" onClick={() => { setSplitError(""); setSplitsOpen(true); }} type="button">
                     {t("Dividir", "Split")}{selected.splits?.length ? ` (${selected.splits.length})` : ""}
                   </button>
                 </div>
-                <div className="flex items-center justify-between gap-2 rounded-2xl bg-white/60 px-2 py-1">
-                  <button className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--primary)] transition hover:bg-white/70" onClick={() => setInfoOpen(true)} type="button">{t("Más info", "More info")}</button>
+                <div className="flex items-center justify-between gap-2 rounded-2xl bg-[var(--surface-soft)] px-2 py-1">
+                  <button className="rounded-xl px-3 py-2 text-sm font-semibold text-[var(--primary)] transition hover:bg-[var(--surface-muted)]" onClick={() => setInfoOpen(true)} type="button">{t("Más info", "More info")}</button>
                   <RowMenu
                     items={[
                       { label: t("Duplicar", "Duplicate"), onClick: duplicateSelectedTransaction },
@@ -3448,7 +3482,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
 
               {selected.linkedTransactionId && (
                 <button
-                  className="mt-4 flex w-full items-center gap-2 rounded-2xl border border-[var(--line)] bg-white/60 p-3 text-left text-sm text-[var(--text-muted)] transition hover:border-[var(--primary)]/40 hover:bg-white/70"
+                  className="mt-4 flex w-full items-center gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-left text-sm text-[var(--text-muted)] transition hover:border-[var(--primary)]/40 hover:bg-[var(--surface-muted)]"
                   onClick={() => selected.linkedTransactionId && setSelectedId(selected.linkedTransactionId)}
                   type="button"
                 >
@@ -3534,7 +3568,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
             {(selected.splits ?? []).length > 0 && (
               <div className="space-y-2">
                 {(selected.splits ?? []).map((split) => (
-                  <div className="grid gap-3 rounded-2xl bg-white/60 p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center" key={split.id}>
+                  <div className="grid gap-3 rounded-2xl bg-[var(--surface-soft)] p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center" key={split.id}>
                     <span>{categoryById(state.categories, split.categoryId)?.name ?? t("Categoria", "Category")} · {split.note ?? t("sin nota", "no note")}</span>
                     <strong className="amount shrink-0 whitespace-nowrap">{formatMoney(split.amountCents, state.currency)}</strong>
                     <button className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-[var(--danger)]" onClick={() => deleteSplit(split.id)} type="button">{t("Quitar", "Remove")}</button>
@@ -3562,7 +3596,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
         {selected && (
           <div className="grid gap-5">
             {selected.attachmentNames?.length ? (
-              <div className="rounded-2xl bg-white/60 p-4">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                 <p className="font-semibold">{t("Adjuntos", "Attachments")}</p>
                 <p className="mt-1 text-sm text-[var(--text-muted)]">{selected.attachmentNames.join(", ")}</p>
               </div>
@@ -3570,7 +3604,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
 
             {/* Productos: read-only factura lines parsed at captura (name · cantidad · importe). */}
             {selected.lineItems?.length ? (
-              <div className="rounded-2xl bg-white/60 p-4">
+              <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
                 <p className="font-semibold">{t("Productos", "Products")}</p>
                 <div className="mt-3 space-y-2">
                   {selected.lineItems.map((item, index) => (
@@ -3584,11 +3618,11 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
               </div>
             ) : null}
 
-            <div className="rounded-2xl bg-white/60 p-4">
+            <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
               <p className="font-semibold">{t("Historial del movimiento", "Transaction history")}</p>
               <div className="mt-3 space-y-2">
                 {(selected.audit ?? [movementAudit("created", t("Movimiento importado o creado antes del historial local.", "Transaction imported or created before local history."), selected.createdBy)]).map((event) => (
-                  <div className="rounded-xl border border-[var(--line)] bg-white/55 p-3 text-sm" key={event.id}>
+                  <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm" key={event.id}>
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="font-semibold">{event.summary}</span>
                       <span className="text-xs text-[var(--text-muted)]">{new Date(event.at).toLocaleString("es-DO")}</span>
@@ -3599,7 +3633,7 @@ function MovementsView({ state, setState, setView }: { state: AppState; setState
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white/60 p-4">
+            <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
               <p className="font-semibold">{t("Comentarios familiares", "Family comments")}</p>
               <form className="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]" onSubmit={addMovementComment}>
                 <Input label={t("Comentario", "Comment")} value={commentDraft} onChange={setCommentDraft} placeholder={t("Ej. Esto me lo van a reembolsar", "e.g. This will be reimbursed to me")} />
@@ -4416,7 +4450,7 @@ function RulesView({ state, setState }: { state: AppState; setState: Dispatch<Se
         </div>
         <div className="mt-5 grid gap-3">
           {latestRuleApplications.length ? latestRuleApplications.map((application) => (
-            <div className="grid gap-3 rounded-2xl border border-[var(--line)] bg-white/55 p-4 md:grid-cols-[1fr_auto] md:items-center" key={application.id}>
+            <div className="grid gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 md:grid-cols-[1fr_auto] md:items-center" key={application.id}>
               <div>
                 <p className="kicker">{application.kind === "recurring" ? t("recurrente", "recurring") : t("clasificacion", "classification")} · {new Date(application.createdAt).toLocaleString("es-DO")}</p>
                 <h4 className="mt-1 font-semibold">{application.ruleName}</h4>
@@ -4425,7 +4459,7 @@ function RulesView({ state, setState }: { state: AppState; setState: Dispatch<Se
               <span className="rounded-full bg-[var(--surface-soft)] px-3 py-1 text-xs font-semibold">{application.status === "created_pending" ? t("en revision", "in review") : application.status === "classified" ? t("clasificado", "classified") : t("omitido", "skipped")}</span>
             </div>
           )) : (
-            <div className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-6 text-center text-sm text-[var(--text-muted)]">
+            <div className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-6 text-center text-sm text-[var(--text-muted)]">
               {t("Todavia no hay aplicaciones registradas. Genera recurrentes o aplica reglas para ver la bitacora.", "No applications recorded yet. Generate recurring transactions or apply rules to see the log.")}
             </div>
           )}
@@ -4791,7 +4825,7 @@ function ReviewView({ state, setState }: { state: AppState; setState: Dispatch<S
       eyebrow={`${state.review.length} ${t("pendientes", "pending")}`}
       description={t("La IA y las reglas sugieren; el usuario decide.", "AI and rules suggest; you decide.")}
       action={
-        <button className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-white/70" onClick={detectReviewItems} type="button">
+        <button className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-[var(--text-muted)] transition hover:bg-[var(--surface-muted)]" onClick={detectReviewItems} type="button">
           {t("Actualizar", "Refresh")}
         </button>
       }
@@ -4802,12 +4836,12 @@ function ReviewView({ state, setState }: { state: AppState; setState: Dispatch<S
           return (
             <button
               key={chip.key}
-              className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${active ? "border-transparent bg-[var(--ink)] text-white" : "divider-strong bg-white/55 text-[var(--text-muted)] hover:bg-white/80"}`}
+              className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${active ? "border-transparent bg-[var(--ink)] text-white" : "divider-strong bg-[var(--surface-soft)] text-[var(--text-muted)] hover:bg-[var(--surface-soft)]"}`}
               onClick={() => setFilter(chip.key)}
               type="button"
             >
               {chip.label}
-              <span className={`ml-1.5 ${active ? "text-white/70" : chip.danger ? "text-[var(--danger)]" : "text-[var(--text-subtle)]"}`}>{chip.count}</span>
+              <span className={`ml-1.5 ${active ? "text-white/70" : chip.danger ? "text-[var(--warning)]" : "text-[var(--text-subtle)]"}`}>{chip.count}</span>
             </button>
           );
         })}
@@ -4822,7 +4856,7 @@ function ReviewView({ state, setState }: { state: AppState; setState: Dispatch<S
               label={item.title}
               sublabel={reviewReasonLabel(item.reason)}
               value={formatMoney(item.amountCents, state.currency)}
-              valueTone={item.amountCents < 0 || item.reason === "duplicate" || item.reason === "budget_risk" ? "danger" : "default"}
+              valueTone={item.reason === "duplicate" || item.reason === "budget_risk" ? "warn" : "default"}
               onClick={() => setOpenItemId(item.id)}
               menu={[
                 item.reason === "duplicate"
@@ -4855,7 +4889,7 @@ function ReviewView({ state, setState }: { state: AppState; setState: Dispatch<S
           <div className="grid gap-4">
             <div className="flex items-baseline justify-between gap-4">
               <p className="kicker">{reviewReasonLabel(openItem.reason)}</p>
-              <span className={`serif text-3xl font-bold ${openItem.amountCents < 0 ? "text-[var(--danger)]" : ""}`}>{formatMoney(openItem.amountCents, state.currency)}</span>
+              <span className="amount serif text-3xl font-bold">{formatMoney(openItem.amountCents, state.currency)}</span>
             </div>
             <ReviewEvidence state={state} item={openItem} />
           </div>
@@ -5093,7 +5127,7 @@ function NetWorthView({ state, setState }: { state: AppState; setState: Dispatch
       <summary className="flex cursor-pointer select-none items-center justify-between gap-4">
         <span className="serif text-xl font-bold tracking-tight">{title}</span>
         <span className="flex items-center gap-3">
-          <span className={`serif text-xl font-bold ${tone === "good" ? "text-[var(--primary)]" : "text-[var(--danger)]"}`}>{formatMoney(total, state.currency)}</span>
+          <span className={`amount serif text-xl font-bold ${tone === "good" ? "text-[var(--primary)]" : "text-[var(--warning)]"}`}>{formatMoney(total, state.currency)}</span>
           <span className="kicker">{items.length}</span>
         </span>
       </summary>
@@ -5356,7 +5390,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
     <div className="grid gap-4">
       <Input label={t("Nombre", "Name")} value={draft.name} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} placeholder={t("Ej. Tarjeta de crédito", "e.g. Credit card")} />
       <Input label={t("Balance", "Balance")} value={draft.balance} onChange={(value) => setDraft((current) => ({ ...current, balance: value }))} placeholder="0.00" />
-      <details className="rounded-2xl bg-white/55 p-3">
+      <details className="rounded-2xl bg-[var(--surface-soft)] p-3">
         <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
         <div className="mt-3 grid gap-4">
           <Input label={t("Tasa %", "Rate %")} value={draft.rate} onChange={(value) => setDraft((current) => ({ ...current, rate: value }))} placeholder="0" />
@@ -5395,7 +5429,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
               const ratio = paidRatio(debt);
               const focus = debt.id === focusDebtId && state.debts.length > 1;
               return (
-                <div key={debt.id} className={focus ? "rounded-2xl border-l-4 border-l-[var(--danger)]" : ""}>
+                <div key={debt.id} className={focus ? "rounded-2xl border-l-4 border-l-[var(--primary)]" : ""}>
                   <CompactRow
                     icon={<CreditCard className="h-5 w-5" />}
                     label={debt.name}
@@ -5423,7 +5457,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
         title={t("Nueva deuda", "New debt")}
         footer={
           <>
-            <button className="rounded-2xl border border-[var(--line)] bg-white/70 px-5 py-2.5 text-sm font-bold" onClick={() => setAddOpen(false)} type="button">{t("Cancelar", "Cancel")}</button>
+            <button className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold" onClick={() => setAddOpen(false)} type="button">{t("Cancelar", "Cancel")}</button>
             <button className="rounded-2xl bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-[var(--ink)] disabled:opacity-70" onClick={addDebt} type="button" disabled={!draft.name.trim()}>{t("Agregar", "Add")}</button>
           </>
         }
@@ -5438,14 +5472,14 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
         title={t("Editar deuda", "Edit debt")}
         footer={
           <>
-            <button className="rounded-2xl border border-[var(--line)] bg-white/70 px-5 py-2.5 text-sm font-bold" onClick={() => setEditId(null)} type="button">{t("Cancelar", "Cancel")}</button>
+            <button className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold" onClick={() => setEditId(null)} type="button">{t("Cancelar", "Cancel")}</button>
             <button className="rounded-2xl bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-[var(--ink)] disabled:opacity-70" onClick={saveDebt} type="button" disabled={!draft.name.trim()}>{t("Guardar", "Save")}</button>
           </>
         }
       >
         {editingDebt && (
           <div className="grid gap-5">
-            <div className="rounded-2xl bg-white/60 p-4">
+            <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
               <div className="flex items-end justify-between gap-3">
                 <p className="text-sm font-semibold">{t("Balance actual:", "Current balance:")} {formatMoney(editingDebt.balanceCents, state.currency)}</p>
                 <span className="kicker">{Math.round(paidRatio(editingDebt) * 100)}% {t("pagado", "paid")}</span>
@@ -5454,11 +5488,11 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
               <button className="mt-4 rounded-full bg-[var(--lime)] px-4 py-2 text-xs font-bold text-black" onClick={() => { const debt = editingDebt; setEditId(null); openPayment(debt); }} type="button">{t("Registrar pago", "Record payment")}</button>
             </div>
             {debtFormFields}
-            <div className="rounded-2xl bg-white/60 p-4">
+            <div className="rounded-2xl bg-[var(--surface-soft)] p-4">
               <p className="font-semibold">{t("Histórico de pagos", "Payment history")}</p>
               <div className="mt-3 space-y-2">
                 {state.transactions.filter((transaction) => transaction.tags.includes(`debt:${editingDebt.id}`)).slice(0, 8).map((transaction) => (
-                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white/65 px-3 py-2 text-sm" key={transaction.id}>
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-[var(--surface-soft)] px-3 py-2 text-sm" key={transaction.id}>
                     <span>{transaction.date} · {transaction.description}</span>
                     <strong>{formatMoney(transaction.amountCents, transaction.baseCurrency)}</strong>
                   </div>
@@ -5477,7 +5511,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
         title={payingDebt ? `${t("Registrar pago", "Record payment")} · ${payingDebt.name}` : t("Registrar pago", "Record payment")}
         footer={
           <>
-            <button className="rounded-2xl border border-[var(--line)] bg-white/70 px-5 py-2.5 text-sm font-bold" onClick={() => setPayId(null)} type="button">{t("Cancelar", "Cancel")}</button>
+            <button className="rounded-2xl border border-[var(--line)] bg-white px-5 py-2.5 text-sm font-bold" onClick={() => setPayId(null)} type="button">{t("Cancelar", "Cancel")}</button>
             <button className="rounded-2xl bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-[var(--ink)] disabled:opacity-70" onClick={registerPayment} type="button" disabled={toCents(paymentDraft.amount) <= 0 || !paymentDraft.accountId}>{t("Registrar", "Record")}</button>
           </>
         }
@@ -5489,7 +5523,7 @@ function DebtsView({ state, setState }: { state: AppState; setState: Dispatch<Se
             {t("Fecha", "Date")}
             <input className="field" type="date" value={paymentDraft.date} onChange={(event) => setPaymentDraft((current) => ({ ...current, date: event.target.value }))} />
           </label>
-          <details className="rounded-2xl bg-white/55 p-3">
+          <details className="rounded-2xl bg-[var(--surface-soft)] p-3">
             <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
             <div className="mt-3">
               <Input label={t("Nota", "Note")} value={paymentDraft.note} onChange={(value) => setPaymentDraft((current) => ({ ...current, note: value }))} placeholder={t("Detalle del pago", "Payment detail")} />
@@ -5715,7 +5749,7 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
             return (
               <Card key={goal.id} className="!p-4 sm:!p-5">
                 <div className="flex items-center gap-4">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--text-muted)]">
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white text-[var(--text-muted)]">
                     <Target className="h-5 w-5" />
                   </span>
                   <div className="min-w-0 flex-1">
@@ -5808,7 +5842,7 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
               </label>
             </div>
             <Select label={moveMode === "withdraw" ? t("Cuenta destino", "Destination account") : t("Cuenta", "Account")} value={moveDraft.accountId} options={activeAccounts.map((account) => account.id)} render={(id) => accountName(id)} onChange={(value) => setMoveDraft((current) => ({ ...current, accountId: value }))} />
-            <details className="rounded-2xl bg-white/55 p-3">
+            <details className="rounded-2xl bg-[var(--surface-soft)] p-3">
               <summary className="cursor-pointer select-none text-xs font-bold uppercase tracking-[0.16em] text-[var(--text-muted)]">{t("Más opciones", "More options")}</summary>
               <div className="mt-3">
                 <Input label={t("Nota", "Note")} value={moveDraft.note} onChange={(value) => setMoveDraft((current) => ({ ...current, note: value }))} placeholder={t("Detalle del movimiento", "Transaction detail")} />
@@ -5832,7 +5866,7 @@ function GoalsView({ state, setState }: { state: AppState; setState: Dispatch<Se
         {historyGoal && (
           <div className="grid gap-2">
             {goalTransactions(historyGoal.id).map((transaction) => (
-              <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/55 px-4 py-3 text-sm" key={transaction.id}>
+              <div className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 text-sm" key={transaction.id}>
                 <div className="min-w-0">
                   <p className="truncate font-semibold">{transaction.description}</p>
                   <p className="text-xs text-[var(--text-muted)]">{transaction.date}</p>
@@ -6109,7 +6143,7 @@ function ReportsView({
 
   return (
     <ViewShell title={t("Reportes", "Reports")} eyebrow={t("Mensual y anual", "Monthly and annual")} description={t("Tasa de ahorro, ingresos reales, gasto promedio y cierre mensual en un vistazo.", "Savings rate, real income, average spending, and month-end close at a glance.")}>
-      <div className="grid grid-cols-4 rounded-full bg-white/60 p-2">
+      <div className="grid grid-cols-4 rounded-full bg-[var(--surface-soft)] p-2">
         {[
           ["month", t("Mes", "Month")],
           ["analysis", t("Análisis", "Analysis")],
@@ -6240,7 +6274,7 @@ function ReportsView({
               {t("Más opciones", "More options")}
             </summary>
             <div className="mt-4 grid gap-4 lg:grid-cols-2">
-              <div className="rounded-2xl border border-[var(--line)] bg-white/65 p-4">
+              <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
                 <p className="kicker">{t("Resumen de cierre", "Close summary")}</p>
                 <div className="mt-4 grid gap-3">
                   <Metric label={t("Ingresos", "Income")} value={formatMoney(summary.income, state.currency)} />
@@ -6264,7 +6298,7 @@ function ReportsView({
                   />
                 </label>
 
-                <label className="flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-white/65 p-4 text-sm">
+                <label className="flex items-start gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm">
                   <input
                     checked={closingDraft.prepareNext}
                     className="mt-1 h-5 w-5 accent-[var(--primary)]"
@@ -6281,7 +6315,7 @@ function ReportsView({
                 </label>
 
                 {suggestedAdjustments.length > 0 && (
-                  <div className="rounded-2xl border border-[var(--line)] bg-white/65 p-4">
+                  <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
                     <p className="font-bold">{t("Sugerencias para el próximo mes", "Suggestions for next month")}</p>
                     <div className="mt-3 space-y-2">
                       {suggestedAdjustments.slice(0, 4).map((item) => (
@@ -6299,7 +6333,7 @@ function ReportsView({
               </div>
             </div>
 
-            <div className="mt-4 rounded-2xl border border-[var(--line)] bg-white/65 p-4">
+            <div className="mt-4 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
               <h4 className="font-bold">{t("Fugas de capital", "Money leaks")}</h4>
               <div className="mt-4 space-y-3">
                 {usage.slice(0, 5).map((item) => <RiskRow key={item.id} name={item.name} ratio={item.ratio} spent={item.spent} planned={item.plannedCents} currency={state.currency} />)}
@@ -6389,7 +6423,7 @@ function ReportsView({
             <Metric label={t("Disponible por dia restante", "Available per remaining day")} value={formatMoney(estimatedDailyAvailable, state.currency)} tone={estimatedDailyAvailable < 0 ? "bad" : "good"} />
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--line)] bg-white/55">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)]">
             {reportRows.length === 0 && (
               <p className="p-6 text-sm text-[var(--text-muted)]">{t("No hay movimientos aprobados para este reporte. Registra o aprueba movimientos del mes para ver analisis.", "No approved transactions for this report. Record or approve transactions this month to see analysis.")}</p>
             )}
@@ -6421,7 +6455,7 @@ function ReportsView({
         <Card>
           <div className="flex items-center justify-between gap-3">
             <h3 className="serif text-xl font-bold">{t("Lectura anual", "Annual overview")}</h3>
-            <div className="flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-white/70 px-1 py-1">
+            <div className="flex items-center gap-0.5 rounded-full border border-[var(--line)] bg-white px-1 py-1">
               <button type="button" aria-label={t("Año anterior", "Previous year")} onClick={() => setSelectedYear(String(Number(year) - 1))} className="grid h-7 w-7 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white">
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -6450,7 +6484,7 @@ function ReportsView({
                     <td className="py-3 font-semibold">{row.month}</td>
                     <td>{formatMoney(row.income, state.currency)}</td>
                     <td>{formatMoney(row.outflow, state.currency)}</td>
-                    <td className={row.remainder < 0 ? "font-semibold text-[var(--danger)]" : "font-semibold text-[var(--primary)]"}>{formatMoney(row.remainder, state.currency)}</td>
+                    <td className={row.remainder < 0 ? "font-semibold text-[var(--warning)]" : "font-semibold text-[var(--primary)]"}>{formatMoney(row.remainder, state.currency)}</td>
                     <td>{Math.round(row.savingsRate * 100)}%</td>
                     <td>{row.transactionCount}</td>
                     <td>{row.closed ? t("Cerrado", "Closed") : t("Abierto", "Open")}</td>
@@ -6472,7 +6506,7 @@ function ReportsView({
                   <h3 className="serif mt-1 text-3xl font-bold">{closing.month}</h3>
                   <p className="mt-2 text-sm text-[var(--text-muted)]">{closing.notes}</p>
                 </div>
-                <span className={`serif text-3xl font-bold ${closing.remainderCents < 0 ? "text-[var(--danger)]" : "text-[var(--primary)]"}`}>{formatMoney(closing.remainderCents, state.currency)}</span>
+                <span className={`amount serif text-3xl font-bold ${closing.remainderCents < 0 ? "text-[var(--warning)]" : "text-[var(--primary)]"}`}>{formatMoney(closing.remainderCents, state.currency)}</span>
               </div>
               <div className="mt-5 grid gap-3 md:grid-cols-4">
                 <Metric label={t("Ingresos", "Income")} value={formatMoney(closing.incomeCents, state.currency)} />
@@ -6482,22 +6516,22 @@ function ReportsView({
               </div>
               {(closing.pendingReviewCount !== undefined || closing.exceededCategories?.length || closing.learning) && (
                 <div className="mt-5 grid gap-3 lg:grid-cols-3">
-                  <div className="rounded-2xl bg-white/65 p-4 text-sm">
+                  <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm">
                     <p className="font-bold">{t("Pendientes al cerrar", "Pending at close")}</p>
                     <p className="mt-1 text-[var(--text-muted)]">{t(`${closing.pendingReviewCount ?? 0} revision(es) · ${closing.pendingReceiptCount ?? 0} recibo(s)`, `${closing.pendingReviewCount ?? 0} review(s) · ${closing.pendingReceiptCount ?? 0} receipt(s)`)}</p>
                   </div>
-                  <div className="rounded-2xl bg-white/65 p-4 text-sm">
+                  <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm">
                     <p className="font-bold">{t("Excedidos", "Over budget")}</p>
                     <p className="mt-1 text-[var(--text-muted)]">{closing.exceededCategories?.length ? closing.exceededCategories.map((item) => item.name).join(", ") : t("Ninguno", "None")}</p>
                   </div>
-                  <div className="rounded-2xl bg-white/65 p-4 text-sm">
+                  <div className="rounded-2xl bg-[var(--surface-soft)] p-4 text-sm">
                     <p className="font-bold">{t("Siguiente mes", "Next month")}</p>
                     <p className="mt-1 text-[var(--text-muted)]">{closing.nextMonthPrepared ? t("Preparado automaticamente", "Prepared automatically") : t("No preparado desde el cierre", "Not prepared from this close")}</p>
                   </div>
                 </div>
               )}
               {closing.learning && (
-                <p className="mt-4 rounded-2xl bg-white/65 p-4 text-sm text-[var(--foreground)]">{closing.learning}</p>
+                <p className="mt-4 rounded-2xl bg-[var(--surface-soft)] p-4 text-sm text-[var(--foreground)]">{closing.learning}</p>
               )}
             </Card>
           ))}
@@ -7374,7 +7408,7 @@ function SettingsView({
   const restNotifications = (Object.keys(notificationLabels) as NotificationKind[]).filter((kind) => !keyNotifications.includes(kind));
   const notificationCopy = (kind: NotificationKind) => t(notificationLabels[kind], { daily_capture: "Log daily spending", recurring: "Recurring due", budget_risk: "Category at risk", month_close: "Month-end close", balance_confirm: "Confirm balances", debt_payment: "Debt payment", goal_progress: "Savings goal", movement_review: "Transaction pending", receipts: "Receipts and attachments" }[kind]);
   const notificationToggle = (kind: NotificationKind) => (
-    <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/55 p-4 text-sm font-semibold" key={kind}>
+    <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm font-semibold" key={kind}>
       <span>{notificationCopy(kind)}</span>
       <input
         checked={state.notificationSettings[kind] ?? true}
@@ -7466,7 +7500,7 @@ function SettingsView({
         </div>
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <Select label={t("Proveedor IA", "AI provider")} value={state.aiSettings.provider} options={["local", "openai", "byok"]} render={(value) => value === "local" ? t("Reglas locales (sin internet)", "Local rules (no internet)") : value === "openai" ? t("IA incluida (con tu plan)", "Included AI (with your plan)") : t("Tu propia API key", "Bring your own key")} onChange={(value) => setState((current) => ({ ...current, aiSettings: { ...current.aiSettings, provider: value as AiProvider } }))} />
-          <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/55 p-4 text-sm font-semibold">
+          <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm font-semibold">
             <span>{t("IA activa", "AI active")}</span>
             <input
               checked={state.aiSettings.enabled}
@@ -7489,11 +7523,11 @@ function SettingsView({
             <ChevronDown className="h-4 w-4 transition group-open:rotate-180" />
           </summary>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/55 p-4 text-sm font-semibold">
+            <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm font-semibold">
               <span>{t("Guardar historial IA", "Save AI history")}</span>
               <input checked={state.aiSettings.saveHistory} onChange={(event) => setState((current) => ({ ...current, aiSettings: { ...current.aiSettings, saveHistory: event.target.checked } }))} type="checkbox" />
             </label>
-            <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-white/55 p-4 text-sm font-semibold">
+            <label className="flex items-center justify-between gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm font-semibold">
               <span>{t("Permitir texto de recibos", "Allow receipt text")}</span>
               <input checked={state.aiSettings.allowReceiptText} onChange={(event) => setState((current) => ({ ...current, aiSettings: { ...current.aiSettings, allowReceiptText: event.target.checked } }))} type="checkbox" />
             </label>
@@ -7564,7 +7598,7 @@ function SettingsView({
                 ))}
               </div>
             ) : (
-              <p className="rounded-2xl border border-dashed border-[var(--line)] bg-white/40 p-4 text-sm text-[var(--text-muted)]">
+              <p className="rounded-2xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-4 text-sm text-[var(--text-muted)]">
                 {t("Aún no tienes apodos. Añade uno para que los movimientos muestren un nombre limpio.", "You don't have any nicknames yet. Add one so transactions show a clean name.")}
               </p>
             )}
@@ -7629,7 +7663,7 @@ function SettingsView({
             </div>
           </details>
           {editingCategory && mergeTargets.length > 0 && (
-            <div className="rounded-2xl border border-[var(--line)] bg-white/45 p-4">
+            <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
               <p className="text-sm font-bold text-[var(--foreground)]">{t("Fusionar con otra", "Merge into another")}</p>
               <p className="mt-1 text-xs text-[var(--text-muted)]">{t("Mueve sus movimientos y plan a otra categoría del mismo grupo.", "Move its transactions and plan into another category of the same group.")}</p>
               <form className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" onSubmit={(event) => { mergeCategory(event); setEditingCategoryId(null); }}>
@@ -7713,7 +7747,7 @@ function SettingsView({
                 `You're changing your household currency from ${currencyLabel(state.currency)} to ${currencyLabel(currencyChange.to)}.`,
               )}
             </p>
-            <div className="rounded-2xl bg-white/70 p-4">
+            <div className="rounded-2xl bg-white p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{t("Tasa de cambio", "Exchange rate")}</p>
               <p className="serif mt-1 text-lg font-bold">{`1 ${state.currency} = ${Number(currencyChange.rate.toPrecision(4))} ${currencyChange.to}`}</p>
               <p className="mt-1 text-xs text-[var(--text-muted)]">
@@ -7990,7 +8024,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
   return (
     <ViewShell title={t("Importacion de datos", "Data import")} eyebrow={t("Tus datos, de vuelta", "Your data, back in")} description={t("Restaura un respaldo completo de RindoMes o pega movimientos desde tu banco o una tabla.", "Restore a full RindoMes backup, or paste transactions from your bank or a table.")}>
       <Card>
-        <div className="grid place-items-center rounded-3xl border border-dashed border-[var(--line)] bg-white/45 p-10 text-center">
+        <div className="grid place-items-center rounded-3xl border border-dashed border-[var(--line)] bg-[var(--surface-soft)] p-10 text-center">
           <FileSpreadsheet className="h-12 w-12 text-[var(--primary)]" />
           <h3 className="serif mt-4 text-3xl font-bold">{t("Restaurar respaldo", "Restore backup")}</h3>
           <p className="mt-2 max-w-lg text-sm text-[var(--text-muted)]">{message}</p>
@@ -8045,7 +8079,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
               <button className="rounded-2xl border border-[var(--line)] bg-white px-6 py-3 text-sm font-bold is-disabled" disabled={!textPreview?.transactions.length} onClick={applyTextImport} type="button">{t("Aplicar texto", "Apply text")}</button>
             </div>
           </div>
-          <div className="rounded-2xl border border-[var(--line)] bg-white/55 p-4">
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4">
             <p className="kicker">{t("Resumen texto", "Text summary")}</p>
             {!textPreview && <p className="mt-3 text-sm text-[var(--text-muted)]">{t("Pega movimientos desde banco, notas o una tabla simple para ver la vista previa antes de tocar datos reales.", "Paste transactions from your bank, notes, or a simple table to preview before touching real data.")}</p>}
             {textPreview && (
@@ -8063,7 +8097,7 @@ function ImportView({ state, setState }: { state: AppState; setState: Dispatch<S
             {textPreview.warnings.slice(0, 4).map((warning) => (
               <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-[var(--danger)]" key={warning}>{warning}</p>
             ))}
-            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-white/55">
+            <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)]">
               {textPreview.transactions.slice(0, 8).map((transaction) => (
                 <div className="grid gap-2 border-b border-[var(--line)] p-4 last:border-b-0 sm:grid-cols-[1fr_auto] sm:items-center" key={transaction.id}>
                   <div>
@@ -8138,7 +8172,7 @@ function Modal({
         <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-4 sm:px-6">
           <h2 className="serif text-xl font-bold tracking-tight sm:text-2xl">{title}</h2>
           <button
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-white/80"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white text-[var(--foreground)] shadow-sm transition hover:bg-[var(--surface-soft)]"
             onClick={onClose}
             type="button"
             aria-label={t("Cerrar", "Close")}
@@ -8181,7 +8215,7 @@ function RowMenu({ items }: { items: RowMenuItem[] }) {
   return (
     <div className="relative shrink-0">
       <button
-        className="grid h-9 w-9 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-white/70 hover:text-[var(--foreground)]"
+        className="grid h-9 w-9 place-items-center rounded-full text-[var(--text-muted)] transition hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
         onClick={(event) => {
           event.stopPropagation();
           setOpen((current) => !current);
@@ -8201,7 +8235,7 @@ function RowMenu({ items }: { items: RowMenuItem[] }) {
         >
           {items.map((item, index) => (
             <button
-              className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-white/70 ${item.danger ? "text-[var(--danger)]" : "text-[var(--foreground)]"}`}
+              className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold transition hover:bg-[var(--surface-muted)] ${item.danger ? "text-[var(--danger)]" : "text-[var(--foreground)]"}`}
               key={`${item.label}-${index}`}
               onClick={(event) => {
                 event.stopPropagation();
@@ -8236,7 +8270,7 @@ function CompactRow({
   label: string;
   sublabel?: string;
   value?: string;
-  valueTone?: "default" | "danger" | "primary";
+  valueTone?: "default" | "danger" | "warn" | "primary";
   onClick?: () => void;
   menu?: RowMenuItem[];
 }) {
@@ -8244,13 +8278,15 @@ function CompactRow({
   const valueClass =
     valueTone === "danger"
       ? "text-[var(--danger)]"
-      : valueTone === "primary"
-        ? "text-[var(--primary)]"
-        : "text-[var(--ink)]";
+      : valueTone === "warn"
+        ? "text-[var(--warning)]"
+        : valueTone === "primary"
+          ? "text-[var(--primary)]"
+          : "text-[var(--ink)]";
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-white/45 px-4 py-3 transition ${interactive ? "cursor-pointer divider-strong hover:border-[var(--primary)] hover:bg-white/70" : ""}`}
+      className={`group flex items-center gap-3 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] px-4 py-3 transition ${interactive ? "cursor-pointer divider-strong hover:border-[var(--primary)] hover:bg-[var(--surface-muted)]" : ""}`}
       onClick={onClick}
       onKeyDown={
         interactive
@@ -8266,7 +8302,7 @@ function CompactRow({
       tabIndex={interactive ? 0 : undefined}
     >
       {icon && (
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white/70 text-[var(--text-muted)]">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-[var(--line)] bg-white text-[var(--text-muted)]">
           {icon}
         </span>
       )}
@@ -8327,15 +8363,27 @@ function Metric({ label, value, tone }: { label: string; value: string; tone?: "
   return (
     <div className="min-w-0">
       <p className="kicker">{label}</p>
-      <p className={`amount serif mt-1.5 max-w-full break-words text-3xl font-bold leading-tight ${tone === "good" ? "text-[var(--primary)]" : tone === "bad" ? "text-[var(--danger)]" : ""}`}>{value}</p>
+      <p className={`amount mt-1.5 max-w-full break-words text-2xl font-bold leading-tight ${tone === "good" ? "text-[var(--primary)]" : tone === "bad" ? "text-[var(--warning)]" : ""}`}>{value}</p>
     </div>
   );
 }
 
 function Progress({ value, danger, className = "" }: { value: number; danger?: boolean; className?: string }) {
+  // Excedido (value > 1): la barra completa representa lo GASTADO — el tramo oliva es lo
+  // cubierto por el plan y el tramo ámbar el exceso. Así se VE cuánto te pasaste (300% se
+  // distingue de 105%), en vez de la barra 100% roja idéntica para cualquier exceso.
+  if (value > 1) {
+    const planShare = Math.max(10, Math.round((1 / value) * 100));
+    return (
+      <div className={`flex h-2 gap-px overflow-hidden rounded-full bg-[rgba(35,43,19,0.12)] ${className}`}>
+        <div className="h-full rounded-l-full bg-[var(--primary)]" style={{ width: `${planShare}%` }} />
+        <div className="h-full rounded-r-full bg-[var(--warning-bar)]" style={{ width: `${100 - planShare}%` }} />
+      </div>
+    );
+  }
   return (
-    <div className={`h-2 overflow-hidden rounded-full bg-slate-200 ${className}`}>
-      <div className={`h-full rounded-full ${danger ? "bg-[var(--danger)]" : "bg-[var(--primary)]"}`} style={{ width: `${Math.max(4, Math.min(value * 100, 100))}%` }} />
+    <div className={`h-2 overflow-hidden rounded-full bg-[rgba(35,43,19,0.12)] ${className}`}>
+      <div className={`h-full rounded-full ${danger ? "bg-[var(--warning-bar)]" : "bg-[var(--primary)]"}`} style={{ width: `${Math.max(4, Math.min(value * 100, 100))}%` }} />
     </div>
   );
 }
@@ -8347,7 +8395,7 @@ function RiskRow({ name, ratio, spent, planned, currency }: { name: string; rati
     <div>
       <div className="flex items-end justify-between">
         <span className="font-semibold">{name}</span>
-        <span className={danger ? "font-bold text-[var(--danger)]" : "font-semibold"}>{Math.round(ratio * 100)}%</span>
+        <span className={danger ? "font-bold text-[var(--warning)]" : "font-semibold"}>{Math.round(ratio * 100)}%</span>
       </div>
       <Progress className="mt-2" value={ratio} danger={danger} />
       <div className="mt-2 flex justify-between text-sm text-[var(--text-muted)]">
@@ -8392,7 +8440,9 @@ function TransactionRow({ state, transaction }: { state: AppState; transaction: 
           <p className="truncate font-semibold">{transaction.description}</p>
           <p className="truncate text-sm text-[var(--text-muted)]">{transaction.date} · {transfer ? t(`Transferencia a ${destination ?? "cuenta destino"}`, `Transfer to ${destination ?? "destination account"}`) : refund ? t(`Reembolso de ${linked?.description ?? category?.name ?? "gasto"}`, `Refund of ${linked?.description ?? category?.name ?? "expense"}`) : splitSummary || category?.name} · {transaction.merchant ? merchantDisplay(transaction.merchant, state.merchantAliases) : t("Sin comercio", "No merchant")}</p>
           <details className="group mt-0.5">
-            <summary className="cursor-pointer select-none list-none text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--text-subtle)] transition hover:text-[var(--primary)]">{t("Detalles", "Details")}</summary>
+            {/* Antes iba en VERSALITAS con tracking — un grito repetido en cada fila. Ahora es
+                un enlace discreto: la fila respira y el dato sigue a un click. */}
+            <summary className="cursor-pointer select-none list-none text-xs font-medium text-[var(--text-subtle)] underline decoration-dotted underline-offset-2 transition hover:text-[var(--primary)]">{t("Detalles", "Details")}</summary>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
               {t("Original", "Original")} {formatMoney(transaction.originalAmountCents, transaction.originalCurrency)} · {t("tasa", "rate")} {transaction.exchangeRate} ({transaction.exchangeRateSource}, {transaction.exchangeRateDate}) · {transactionStatusLabel(transaction.status)}
               {transaction.splits?.length ? ` · ${t(`${transaction.splits.length} splits`, `${transaction.splits.length} splits`)}` : ""}
@@ -8400,7 +8450,7 @@ function TransactionRow({ state, transaction }: { state: AppState; transaction: 
           </details>
         </div>
       </div>
-      <p className={`amount serif shrink-0 whitespace-nowrap text-right text-2xl font-bold ${income || transfer || refund ? "text-[var(--primary)]" : ""}`}>{income || refund ? "+" : transfer ? "" : "-"}{formatMoney(transaction.amountCents, state.currency)}</p>
+      <p className={`amount shrink-0 whitespace-nowrap text-right text-lg font-bold ${income || transfer || refund ? "text-[var(--primary)]" : ""}`}>{income || refund ? "+" : transfer ? "" : "-"}{formatMoney(transaction.amountCents, state.currency)}</p>
     </>
   );
 }
@@ -8413,7 +8463,7 @@ function ListCard({ title, subtitle, value, danger }: { title: string; subtitle:
           <h3 className="font-semibold">{title}</h3>
           <p className="text-sm text-[var(--text-muted)]">{subtitle}</p>
         </div>
-        <span className={`amount serif shrink-0 whitespace-nowrap text-2xl font-bold ${danger ? "text-[var(--danger)]" : ""}`}>{value}</span>
+        <span className={`amount shrink-0 whitespace-nowrap text-lg font-bold ${danger ? "text-[var(--warning)]" : ""}`}>{value}</span>
       </div>
     </Card>
   );
@@ -8430,7 +8480,7 @@ function CommentList({ comments, state }: { comments: FamilyComment[]; state?: A
       {comments.map((comment) => {
         const target = state ? commentTargetLabel(state, comment, t("Movimiento", "Movement"), t("Categoría", "Category")) : null;
         return (
-          <div className="rounded-2xl border border-[var(--line)] bg-white/55 p-3 text-sm" key={comment.id}>
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-3 text-sm" key={comment.id}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="font-semibold">{comment.authorName}</span>
               <span className="text-xs text-[var(--text-muted)]">{new Date(comment.createdAt).toLocaleString("es-DO")}</span>

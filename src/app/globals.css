@@ -6,10 +6,27 @@
   --surface: #fffaf6;
   --surface-soft: #f8f3ef;
   --surface-muted: #e6e1df;
-  --line: rgba(116, 122, 96, 0.24);
+  /* Antes rgba(116,122,96,0.24): un borde a ~1.33:1 que desaparecía sobre crema, así que
+     las tarjetas y filas "flotaban" sin límites. Subido a tinta-oliva 0.18 — sigue siendo
+     un hairline discreto pero por fin DIBUJA la caja. */
+  --line: rgba(35, 43, 19, 0.18);
   --primary: #506600;
   --lime: #ccff00;
   --danger: #ba1a1a;
+  /* Ámbar de advertencia: pasarse del plan / riesgo de presupuesto. El rojo --danger queda
+     SOLO para errores y acciones destructivas; sin esta separación la app gritaba en rojo
+     por todas partes y el rojo dejó de significar algo. */
+  --warning: #92400e;
+  --warning-bar: #d97706;
+  /* Tinta-oliva profunda: el ANCLA oscura del layout (sidebar, hero del dashboard, nav
+     móvil). Sin una superficie oscura, header/sidebar/tarjetas/fondo compartían el mismo
+     valor luminoso y nada tenía jerarquía. */
+  --ink-olive: #232b13;
+  --on-dark: #fef8f5;
+  --on-dark-muted: rgba(254, 248, 245, 0.72);
+  --on-dark-subtle: rgba(254, 248, 245, 0.5);
+  --warning-on-dark: #fbbf24;
+  --danger-on-dark: #ffb4ab;
   --ink: #121414;
   /* Escala SEMÁNTICA de texto, con contraste verificado WCAG AA+ sobre los fondos
      claros de la app (crema #fef8f5 y superficies). Reemplaza a los grises `slate`
@@ -78,9 +95,11 @@ button:not(:disabled):active {
 }
 
 .mesh-bg {
+  /* Radiales lima atenuados (0.34/0.22 → 0.18/0.12): con las tarjetas ahora sólidas, el
+     fondo debe retroceder — antes el baño amarillo competía con el contenido. */
   background:
-    radial-gradient(circle at 20% -4%, rgba(204, 255, 0, 0.34), transparent 34rem),
-    radial-gradient(circle at 86% 12%, rgba(171, 214, 0, 0.22), transparent 30rem),
+    radial-gradient(circle at 20% -4%, rgba(204, 255, 0, 0.18), transparent 34rem),
+    radial-gradient(circle at 86% 12%, rgba(171, 214, 0, 0.12), transparent 30rem),
     linear-gradient(180deg, #f3eee7 0%, #f7f2ec 46%, #ece6de 100%);
 }
 
@@ -95,14 +114,14 @@ button:not(:disabled):active {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.86);
-  /* A faint olive-tinted edge (not white-on-white) gives cards a real, defined boundary
-     so they read as distinct surfaces above the cream background instead of washing out. */
-  border: 1px solid rgba(80, 102, 0, 0.12);
+  /* Tarjeta SÓLIDA (adiós translúcido + blur): blanco pleno sobre el fondo crema es la
+     única forma de que la tarjeta se despegue como superficie propia. El borde tinta-oliva
+     y una sombra corta hacen el resto; el blur solo emborronaba y costaba GPU. */
+  background: #ffffff;
+  border: 1px solid rgba(35, 43, 19, 0.12);
   box-shadow:
-    0 1px 2px rgba(18, 20, 20, 0.04),
-    0 22px 48px -32px rgba(18, 20, 20, 0.3);
-  backdrop-filter: blur(18px);
+    0 1px 2px rgba(18, 20, 20, 0.05),
+    0 12px 32px -24px rgba(18, 20, 20, 0.35);
 }
 
 .serif {
