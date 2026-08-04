@@ -82,6 +82,19 @@ export async function assertOwner(ctx: any, householdId: any, userId: any) {
   if (!me || me.role !== "owner") throw new Error("Solo el propietario puede gestionar miembros.");
 }
 
+// Write-level authorization: like assertCanAccess, but a `viewer` membership is
+// read-only — before this check existed, cualquier invitado como "solo lectura"
+// podía sobrescribir el hogar entero vía saveSnapshot. EXPORTED so receipts.ts
+// applies the same rule to its write mutations.
+export async function assertCanWrite(ctx: any, householdId: any, userId: any) {
+  if (!userId) throw new Error("Inicia sesión para acceder a este hogar.");
+  const members = await householdMembersOf(ctx, householdId);
+  if (members.length === 0) return; // unclaimed household — the signed-in caller adopts it
+  const me = members.find((m: any) => m.userId === userId);
+  if (!me) throw new Error("No tienes acceso a este hogar.");
+  if (me.role === "viewer") throw new Error("Tu acceso a este hogar es de solo lectura.");
+}
+
 async function ensureOwnerMembership(ctx: any, householdId: any, userId: any) {
   const members = await householdMembersOf(ctx, householdId);
   if (members.some((m: any) => m.userId === userId)) return;
@@ -100,7 +113,11 @@ async function ensureOwnerMembership(ctx: any, householdId: any, userId: any) {
   });
 }
 
-/** Returns the household id the signed-in user belongs to, or null. */
+/**
+ * DEPRECATED compat shim: clientes viejos (pestañas abiertas durante el deploy)
+ * todavía se suscriben a esta query. Mantiene el comportamiento anterior
+ * (primera membresía). Eliminar en un release posterior.
+ */
 export const getMyHousehold = queryGeneric({
   args: {},
   handler: async (ctx) => {
@@ -111,6 +128,47 @@ export const getMyHousehold = queryGeneric({
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
       .first();
     return membership?.householdId ?? null;
+  },
+});
+
+/**
+ * Every household (space) the signed-in user belongs to, with their role in each.
+ * This replaces the old getMyHousehold `.first()` heuristic, which silently hid
+ * the invited-family hogar from anyone who already owned a hogar of their own —
+ * the invitation appeared to do nothing. The client picks the active one and
+ * offers a switcher for the rest.
+ */
+export const listMyHouseholds = queryGeneric({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return null;
+    const memberships = await ctx.db
+      .query("householdMembers")
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .collect();
+    const result = [] as {
+      id: string;
+      name: string;
+      role: "owner" | "editor" | "viewer";
+      mode: string;
+      currency: string;
+      memberCount: number;
+    }[];
+    for (const membership of memberships) {
+      const household = await ctx.db.get(membership.householdId);
+      if (!household) continue;
+      const members = await householdMembersOf(ctx, membership.householdId);
+      result.push({
+        id: membership.householdId as string,
+        name: household.name,
+        role: membership.role,
+        mode: household.mode,
+        currency: household.defaultCurrency,
+        memberCount: members.length,
+      });
+    }
+    return result;
   },
 });
 
@@ -134,9 +192,25 @@ export const inviteMember = mutationGeneric({
     const userId = await getAuthUserId(ctx);
     await assertOwner(ctx, args.householdId, userId);
     const email = args.email.trim().toLowerCase();
-    if (!email) throw new Error("Email inválido.");
+    if (!email || !email.includes("@")) throw new Error("Escribe un email válido.");
+    const me = userId ? await ctx.db.get(userId) : null;
+    if (me?.email && me.email.toLowerCase() === email) {
+      throw new Error("Ese es tu propio email: ya eres miembro de este hogar.");
+    }
     const existing = await householdMembersOf(ctx, args.householdId);
-    if (existing.some((m: any) => m.email === email)) return null;
+    // Antes esto devolvía null en silencio y la UI igual decía "Invitación enviada",
+    // así que un email ya invitado parecía re-invitarse sin que pasara nada.
+    if (existing.some((m: any) => m.email === email)) {
+      throw new Error("Ese email ya está invitado a este hogar.");
+    }
+    const subscription = await ctx.db
+      .query("subscriptions")
+      .withIndex("by_household", (q: any) => q.eq("householdId", args.householdId))
+      .first();
+    const membersLimit = subscription?.membersLimit ?? 2;
+    if (existing.length >= membersLimit) {
+      throw new Error(`Tu plan permite ${membersLimit} miembros en este hogar. Mejora a Pro para invitar más.`);
+    }
     const existingUser = await ctx.db
       .query("users")
       .withIndex("email", (q: any) => q.eq("email", email))
@@ -164,7 +238,27 @@ export const removeMember = mutationGeneric({
   },
 });
 
-/** Called after login: links any pending email invites to this user and returns their household. */
+/** Owner-only: cambia el permiso (editor/viewer) de un miembro ya invitado. */
+export const updateMemberRole = mutationGeneric({
+  args: {
+    memberId: v.id("householdMembers"),
+    role: v.union(v.literal("editor"), v.literal("viewer")),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    const member = await ctx.db.get(args.memberId);
+    if (!member) throw new Error("Ese miembro ya no existe.");
+    await assertOwner(ctx, member.householdId, userId);
+    if (member.role === "owner") throw new Error("No puedes cambiar el permiso del propietario.");
+    await ctx.db.patch(args.memberId, { role: args.role });
+  },
+});
+
+/**
+ * Called after login: links any pending email invites to this user. Returns the
+ * household of an invite claimed IN THIS CALL first (so a freshly invited user
+ * lands directly on the family hogar), falling back to any existing membership.
+ */
 export const claimInvites = mutationGeneric({
   args: {},
   handler: async (ctx) => {
@@ -175,11 +269,16 @@ export const claimInvites = mutationGeneric({
     if (!email) return null;
     const pending = await ctx.db
       .query("householdMembers")
-      .withIndex("by_email", (q: any) => q.eq("email", email))
+      .withIndex("by_email", (q: any) => q.eq("email", email.toLowerCase()))
       .collect();
+    let justClaimed: string | null = null;
     for (const m of pending) {
-      if (!m.userId) await ctx.db.patch(m._id, { userId });
+      if (!m.userId) {
+        await ctx.db.patch(m._id, { userId });
+        justClaimed = justClaimed ?? (m.householdId as string);
+      }
     }
+    if (justClaimed) return justClaimed;
     const membership = await ctx.db
       .query("householdMembers")
       .withIndex("by_user", (q: any) => q.eq("userId", userId))
@@ -262,43 +361,6 @@ const defaultNotificationSettings = {
   goal_progress: true,
   movement_review: true,
   receipts: true,
-};
-
-const categoryInput = {
-  group,
-  name: v.string(),
-  subcategories: v.array(v.string()),
-  plannedCents: v.number(),
-  source: v.union(v.literal("starter"), v.literal("user"), v.literal("imported")),
-  archived: v.optional(v.boolean()),
-};
-
-const transactionInput = {
-  type: transactionType,
-  date: v.string(),
-  description: v.string(),
-  categoryId: v.id("categories"),
-  subcategory: v.optional(v.string()),
-  accountId: v.id("accounts"),
-  transferAccountId: v.optional(v.id("accounts")),
-  linkedTransactionId: v.optional(v.id("transactions")),
-  linkKind: v.optional(v.union(v.literal("refund"), v.literal("card_payment"), v.literal("correction"))),
-  merchant: v.optional(v.string()),
-  person: v.optional(v.string()),
-  tags: v.array(v.string()),
-  note: v.optional(v.string()),
-  // Itemized receipt lines (factura). Optional + additive; mirrors transactionSnapshotInput
-  // so a direct addTransaction call can never silently drop the breakdown.
-  lineItems: v.optional(v.array(v.object({ name: v.string(), quantity: v.number(), amountCents: v.number() }))),
-  originalAmountCents: v.number(),
-  originalCurrency: currency,
-  baseAmountCents: v.number(),
-  baseCurrency: currency,
-  exchangeRate: v.number(),
-  exchangeRateDate: v.string(),
-  exchangeRateSource,
-  status: movementStatus,
-  attachmentIds: v.array(v.id("attachments")),
 };
 
 const accountSnapshotInput = {
@@ -603,17 +665,52 @@ export const getHouseholdSnapshot = queryGeneric({
   },
 });
 
-export const createHousehold = mutationGeneric({
+/**
+ * Crea un espacio nuevo: un hogar Convex COMPLETO e independiente (datos aislados
+ * por householdId) con su propio modo de presupuesto, moneda y nombre. Reemplaza
+ * al viejo createHousehold, que creaba hogares sin dueño (nadie lo llamaba y el
+ * hogar quedaba huérfano hasta que alguien lo adoptara). El creador queda como
+ * propietario desde el nacimiento.
+ */
+export const createSpace = mutationGeneric({
   args: {
     name: v.string(),
     defaultCurrency: currency,
     activeMonth: v.string(),
     mode,
+    kind: v.optional(v.union(v.literal("personal"), v.literal("family"), v.literal("business"), v.literal("test"))),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Inicia sesión para crear un espacio.");
+    const name = args.name.trim();
+    if (!name) throw new Error("Ponle un nombre al espacio.");
+
+    // Límite de espacios por dueño: 2 en free, 20 si alguno de sus hogares es Pro
+    // (mismos topes que anuncia la vista de plan).
+    const memberships = await ctx.db
+      .query("householdMembers")
+      .withIndex("by_user", (q: any) => q.eq("userId", userId))
+      .collect();
+    const owned = memberships.filter((m: any) => m.role === "owner");
+    let anyPro = false;
+    for (const membership of owned) {
+      const subscription = await ctx.db
+        .query("subscriptions")
+        .withIndex("by_household", (q: any) => q.eq("householdId", membership.householdId))
+        .first();
+      if (subscription?.plan === "pro") anyPro = true;
+    }
+    const spacesLimit = anyPro ? 20 : 2;
+    if (owned.length >= spacesLimit) {
+      throw new Error(`Tu plan permite ${spacesLimit} espacios propios. Mejora a Pro para crear más.`);
+    }
+
     const now = Date.now();
+    const user = await ctx.db.get(userId);
+    const ownerName = (user?.name as string | undefined) ?? "Propietario";
     const householdId = await ctx.db.insert("households", {
-      name: args.name,
+      name,
       defaultCurrency: args.defaultCurrency,
       activeMonth: args.activeMonth,
       mode: args.mode,
@@ -623,15 +720,26 @@ export const createHousehold = mutationGeneric({
       aiHistoryEnabled: true,
       aiReceiptTextEnabled: true,
       notificationSettings: defaultNotificationSettings,
+      ownerUserId: userId,
       createdAt: now,
       updatedAt: now,
+      version: 1,
+    });
+
+    await ctx.db.insert("householdMembers", {
+      householdId,
+      userId,
+      email: (user?.email as string | undefined) ?? "",
+      name: user?.name as string | undefined,
+      role: "owner",
+      invitedAt: now,
     });
 
     await ctx.db.insert("financialSpaces", {
       householdId,
       localId: "default",
-      name: args.name,
-      kind: "personal",
+      name,
+      kind: args.kind ?? "personal",
       currency: args.defaultCurrency,
       activeMonth: args.activeMonth,
       role: "owner",
@@ -655,9 +763,10 @@ export const createHousehold = mutationGeneric({
 
     await ctx.db.insert("members", {
       householdId,
-      name: "Propietario",
+      name: ownerName,
       role: "owner",
-      avatar: "PR",
+      avatar: ownerName.slice(0, 2).toUpperCase(),
+      email: (user?.email as string | undefined) ?? undefined,
     });
 
     await ctx.db.insert("accounts", {
@@ -675,6 +784,25 @@ export const createHousehold = mutationGeneric({
     });
 
     return householdId;
+  },
+});
+
+/**
+ * Owner-only: borra un espacio completo (hogar + todos sus datos + membresías).
+ * Exige el literal "DELETE" igual que deleteAccount para que una llamada perdida
+ * jamás borre un espacio por accidente.
+ */
+export const deleteSpace = mutationGeneric({
+  args: {
+    householdId: v.id("households"),
+    confirm: v.literal("DELETE"),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    await assertOwner(ctx, args.householdId, userId);
+    if (args.confirm !== "DELETE") throw new Error("Confirmación inválida.");
+    const freedStorageBlobs = await wipeHousehold(ctx, args.householdId);
+    return { ok: true as const, freedStorageBlobs };
   },
 });
 
@@ -721,9 +849,10 @@ export const saveSnapshot = mutationGeneric({
     const userId = await getAuthUserId(ctx);
     // Auth-first: a brand-new hogar can only be provisioned by a signed-in user, so it is
     // owned from birth and never lands in the cloud unclaimed/open. Existing hogares go
-    // through the membership check (which also rejects anonymous callers).
+    // through the WRITE check (membership + role: viewers son solo lectura y no pueden
+    // sobrescribir el hogar; también rechaza llamadas anónimas).
     if (args.householdId) {
-      await assertCanAccess(ctx, args.householdId, userId);
+      await assertCanWrite(ctx, args.householdId, userId);
     } else if (!userId) {
       throw new Error("Inicia sesión para sincronizar tu hogar en la nube.");
     }
@@ -1197,52 +1326,9 @@ export const saveSnapshot = mutationGeneric({
   },
 });
 
-export const addCategory = mutationGeneric({
-  args: {
-    householdId: v.id("households"),
-    category: v.object(categoryInput),
-  },
-  handler: async (ctx, { householdId, category }) => {
-    const categoryId = await ctx.db.insert("categories", {
-      householdId,
-      group: category.group,
-      name: category.name.trim(),
-      subcategories: category.subcategories.map((item) => item.trim()).filter(Boolean),
-      source: category.source,
-      isSystem: false,
-      archived: false,
-    });
-
-    await ctx.db.insert("monthlyPlans", {
-      householdId,
-      month: (await ctx.db.get(householdId))?.activeMonth ?? new Date().toISOString().slice(0, 7),
-      categoryId,
-      plannedCents: category.plannedCents,
-      rolloverCents: 0,
-    });
-
-    return categoryId;
-  },
-});
-
-export const addTransaction = mutationGeneric({
-  args: {
-    householdId: v.id("households"),
-    month: v.string(),
-    transaction: v.object(transactionInput),
-  },
-  handler: async (ctx, { householdId, month, transaction }) => {
-    const now = Date.now();
-
-    return await ctx.db.insert("transactions", {
-      householdId,
-      month,
-      ...transaction,
-      createdAt: now,
-      updatedAt: now,
-    });
-  },
-});
+// NOTE: los viejos addCategory/addTransaction se eliminaron: ningún cliente los
+// llamaba (la captura pasa por saveSnapshot) y escribían SIN ninguna verificación
+// de sesión ni membresía — cualquiera con un householdId podía insertar filas.
 
 // Permanently delete every row owned by a household (all financial data + members + the
 // household doc itself). Mirrors the table set saveSnapshot wipes.

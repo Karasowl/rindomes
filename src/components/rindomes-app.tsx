@@ -42,7 +42,7 @@ import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { applyAccountEffect } from "@/lib/account-effects";
 import { accountKindLabel, aiActionKindLabel, aiActionStatusLabel, aiProviderLabel, currencyLabel, debtStrategyLabel, merchantDisplay, priorityLabel, receiptSourceLabel, receiptStatusLabel, recurringFrequencyLabel, reviewReasonLabel, roleLabel, spaceKindLabel, subscriptionPlanLabel, transactionStatusLabel, transactionTypeLabel } from "@/lib/labels";
-import { ConvexSync, useSyncStatus } from "./convex-sync";
+import { ConvexSync, useSyncStatus, type CloudHouseholdSummary } from "./convex-sync";
 import { Onboarding } from "./onboarding";
 import { AuthPanel } from "./auth-panel";
 import { MembersPanel } from "./members-panel";
@@ -444,6 +444,14 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
   // every gated Convex action needs (entitlement / receipts / AI). `null` means local-only
   // mode (no cloud household yet) — gated views render the manual path, never crash.
   const [householdId, setHouseholdId] = useState<string | null>(null);
+  // Todas las membresías de la cuenta (mis espacios/hogares), levantadas de ConvexSync.
+  // Alimentan el selector de Espacios y el rol real mostrado en Cuenta.
+  const [households, setHouseholds] = useState<CloudHouseholdSummary[] | null>(null);
+  // Cambio de espacio pedido desde la UI; ConvexSync lo aplica y lo limpia.
+  const [requestedHouseholdId, setRequestedHouseholdId] = useState<string | null>(null);
+  // Mi rol REAL en el hogar activo (owner/editor/viewer) según las membresías de la nube.
+  // null mientras carga o en modo local.
+  const cloudRole = households?.find((item) => item.id === householdId)?.role ?? null;
 
   // The bound Convex surface, produced by <CloudBindings/> (only when Convex is configured). Null
   // in local-only mode — every gated view falls back to the manual path. A stable setter keeps the
@@ -505,9 +513,11 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
   const summary = useMemo(() => summarize(state), [state]);
   const usage = useMemo(() => categoryUsage(state), [state]);
   const currentMember = currentWorkspaceMember(state);
-  // In cloud mode a user only reaches AppShell after real Convex Auth, so they are a
-  // signed-in owner and may edit — the local user.status pseudo-session no longer gates it.
-  const canEdit = authed || canEditWorkspace(state);
+  // In cloud mode a user only reaches AppShell after real Convex Auth. Su capacidad de
+  // edición depende del rol REAL en el hogar activo: un invitado como "solo lectura"
+  // (viewer) no edita — el backend además lo rechaza server-side (assertCanWrite).
+  // Mientras el rol carga (cloudRole null) se asume editable; el servidor es el juez final.
+  const canEdit = authed ? cloudRole !== "viewer" : canEditWorkspace(state);
   // createEmptyState scaffolds zero-amount plans for the starter categories, so bare
   // monthlyPlans.length would flag a pristine account as "has data" and scare-warn on setup.
   const hasExistingSetupData = state.transactions.length > 0 || state.monthlyPlans.some((plan) => plan.plannedCents > 0);
@@ -725,11 +735,15 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
             setState={setState}
             ready={localStateReady}
             canEdit={canEdit}
+            authEmail={authEmail}
             onNeedsOnboarding={() => {
               setOnboardingRelaunched(false);
               setShowOnboarding(true);
             }}
             onHouseholdId={setHouseholdId}
+            onHouseholds={setHouseholds}
+            requestedHouseholdId={requestedHouseholdId}
+            onSwitchHandled={() => setRequestedHouseholdId(null)}
             notify={notify}
           />
           {/* Produces the bound Convex surface (entitlement + receipts/AI helpers) only inside the
@@ -785,7 +799,19 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
           )}
           {view === "home" && <HomeView state={state} summary={summary} usage={usage} setView={navigate} onAddIncome={() => navigate("add", { initialType: "income" })} onChangeMonth={(month) => guardedSetState((current) => ({ ...current, activeMonth: month }))} />}
           {view === "setup" && <SetupView state={state} setState={guardedSetState} setView={navigate} />}
-          {view === "spaces" && <SpacesView state={state} setState={guardedSetState} />}
+          {view === "spaces" && (
+            <SpacesView
+              state={state}
+              setState={guardedSetState}
+              households={households}
+              activeHouseholdId={householdId}
+              onSwitchSpace={(id) => {
+                setRequestedHouseholdId(id);
+                setView("home");
+              }}
+              notify={notify}
+            />
+          )}
           {view === "plan" && <PlanView state={state} usage={usage} summary={summary} setState={guardedSetState} />}
           {view === "add" && <AddMovementView state={state} onSave={addTransaction} setView={navigate} initialType={addInitialType} />}
           {view === "ai" && <AIView state={state} setState={guardedSetState} onSave={addTransaction} aiAvailable={aiAvailable} onOpenPaywall={() => navigate("paywall")} />}
@@ -800,7 +826,7 @@ function AppShellContent({ authed = false, authEmail = "" }: { authed?: boolean;
           {view === "reports" && <ReportsView state={state} usage={usage} summary={summary} setState={guardedSetState} />}
           {view === "family" && <FamilyView state={state} setState={guardedSetState} />}
           {view === "export" && <ExportView state={state} />}
-          {view === "account" && <AccountView state={state} setState={setState} authed={authed} />}
+          {view === "account" && <AccountView state={state} setState={setState} authed={authed} cloudRole={cloudRole} householdId={householdId} />}
           {view === "settings" && <SettingsView state={state} setState={guardedSetState} convexConfigured={isConvexConfigured()} onResetLocal={resetLocalData} entitlement={entitlement ?? null} onOpenPaywall={() => navigate("paywall")} />}
           {view === "import" && <ImportView state={state} setState={guardedSetState} />}
           {view === "receipt-capture" && (
@@ -1706,25 +1732,25 @@ function SetupView({
   );
 }
 
-function SpacesView({ state, setState }: { state: AppState; setState: Dispatch<SetStateAction<AppState>> }) {
+function SpacesView({
+  state,
+  setState,
+  households,
+  activeHouseholdId,
+  onSwitchSpace,
+  notify,
+}: {
+  state: AppState;
+  setState: Dispatch<SetStateAction<AppState>>;
+  households: CloudHouseholdSummary[] | null;
+  activeHouseholdId: string | null;
+  onSwitchSpace: (id: string) => void;
+  notify: (message: string, tone?: "success" | "error" | "info") => void;
+}) {
   const { t } = useT();
   const activeSpace = state.spaces.find((space) => space.id === state.activeSpaceId) ?? state.spaces[0];
   const limits = subscriptionUsage(state);
   const canAddMembers = state.subscription.plan === "pro" || state.members.length < state.subscription.membersLimit;
-
-  function activateSpace(id: string) {
-    const space = state.spaces.find((item) => item.id === id);
-    if (!space) return;
-
-    setState((current) => ({
-      ...current,
-      activeSpaceId: id,
-      householdName: space.name,
-      currency: space.currency,
-      activeMonth: space.activeMonth,
-      spaces: current.spaces.map((item) => item.id === id ? { ...item, updatedAt: new Date().toISOString().slice(0, 10) } : item),
-    }));
-  }
 
   function setPlan(plan: AppState["subscription"]["plan"]) {
     setState((current) => ({
@@ -1738,16 +1764,41 @@ function SpacesView({ state, setState }: { state: AppState; setState: Dispatch<S
   const visibleSpaces = state.spaces.filter((space) => !space.archived);
 
   return (
-    <ViewShell title={t("Espacios y plan", "Spaces and plan")} eyebrow={activeSpace?.name ?? state.householdName} description={t("Gestiona espacios y conoce tus límites de plan.", "Manage your spaces and keep an eye on your plan limits.")}>
+    <ViewShell title={t("Espacios y plan", "Spaces and plan")} eyebrow={activeSpace?.name ?? state.householdName} description={t("Cada espacio es un presupuesto independiente con su propio modo, moneda y miembros.", "Each space is an independent budget with its own mode, currency, and members.")}>
+      {convexConfigured ? (
+        <CloudSpacesPanel
+          state={state}
+          households={households}
+          activeHouseholdId={activeHouseholdId}
+          onSwitchSpace={onSwitchSpace}
+          notify={notify}
+        />
+      ) : (
+        <Card>
+          <h3 className="serif text-xl font-bold">{t("Tus espacios", "Your spaces")}</h3>
+          <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Para crear espacios independientes y compartirlos necesitas el modo nube (cuenta).", "Creating independent, shareable spaces requires cloud mode (an account).")}</p>
+          <div className="mt-4 grid gap-2.5">
+            {visibleSpaces.map((space) => (
+              <CompactRow
+                key={space.id}
+                label={space.name}
+                sublabel={`${spaceKindLabel(space.kind)} · ${roleLabel(space.role)}`}
+                value={space.id === state.activeSpaceId ? t("Activo", "Active") : ""}
+                valueTone="primary"
+              />
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card>
         <div className="grid grid-cols-2 gap-4">
-          <Metric label={t("Espacios", "Spaces")} value={`${limits.spacesUsed}/${limits.spacesLimit}`} tone={limits.spacesUsed >= limits.spacesLimit ? "bad" : undefined} />
           <Metric label={t("Miembros", "Members")} value={`${limits.membersUsed}/${limits.membersLimit}`} tone={!canAddMembers ? "bad" : undefined} />
+          <Metric label={t("Créditos IA", "AI credits")} value={`${limits.aiUsed}/${limits.aiLimit}`} />
         </div>
         <details className="mt-4 border-t border-[var(--line)] pt-3 text-sm text-[var(--text-muted)]">
           <summary className="cursor-pointer select-none text-xs font-semibold uppercase tracking-[0.16em] text-[var(--text-subtle)]">{t("Detalles de uso", "Usage details")}</summary>
           <div className="mt-3 grid grid-cols-2 gap-4">
-            <Metric label={t("Créditos IA", "AI credits")} value={`${limits.aiUsed}/${limits.aiLimit}`} />
             <Metric label={t("Almacenamiento (MB)", "Storage (MB)")} value={`${limits.storageUsed}/${limits.storageLimit}`} />
           </div>
         </details>
@@ -1782,28 +1833,152 @@ function SpacesView({ state, setState }: { state: AppState; setState: Dispatch<S
           <button className="mt-4 rounded-2xl bg-white px-6 py-4 text-sm font-bold" onClick={() => setPlan("free")} type="button">{t("Volver a Gratis", "Switch back to Free")}</button>
         )}
       </Card>
-
-      <Card>
-        <h3 className="serif text-xl font-bold">{t("Tus espacios", "Your spaces")}</h3>
-        <div className="mt-4 grid gap-2.5">
-          {visibleSpaces.map((space) => {
-            const isActive = space.id === state.activeSpaceId;
-            const members = `${space.memberCount} ${space.memberCount === 1 ? t("miembro", "member") : t("miembros", "members")}`;
-            return (
-              <CompactRow
-                key={space.id}
-                label={space.name}
-                sublabel={`${spaceKindLabel(space.kind)} · ${roleLabel(space.role)} · ${members}`}
-                value={isActive ? t("Activo", "Active") : t("Activar", "Activate")}
-                valueTone={isActive ? "primary" : "default"}
-                onClick={isActive ? undefined : () => activateSpace(space.id)}
-              />
-            );
-          })}
-        </div>
-      </Card>
     </ViewShell>
   );
+}
+
+// Espacios reales (nube): cada espacio es un hogar Convex independiente. Aquí se listan
+// las membresías vivas de la cuenta, se cambia el activo, se crean espacios nuevos con su
+// propio modo de presupuesto y el dueño puede borrar los que ya no use. Montado solo cuando
+// Convex está configurado (los hooks exigen el provider).
+function CloudSpacesPanel({
+  state,
+  households,
+  activeHouseholdId,
+  onSwitchSpace,
+  notify,
+}: {
+  state: AppState;
+  households: CloudHouseholdSummary[] | null;
+  activeHouseholdId: string | null;
+  onSwitchSpace: (id: string) => void;
+  notify: (message: string, tone?: "success" | "error" | "info") => void;
+}) {
+  const { t } = useT();
+  const createSpace = useMutation(api.finance.createSpace);
+  const deleteSpace = useMutation(api.finance.deleteSpace);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState({
+    name: "",
+    kind: "personal" as "personal" | "family" | "business" | "test",
+    mode: "monthly-plan" as Mode,
+    currency: state.currency as CurrencyCode,
+  });
+
+  const list = households ?? [];
+  const ownedCount = list.filter((item) => item.role === "owner").length;
+
+  async function handleCreate(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (creating) return;
+    setCreating(true);
+    try {
+      const id = await createSpace({
+        name: draft.name.trim() || t("Nuevo espacio", "New space"),
+        defaultCurrency: draft.currency,
+        activeMonth: new Date().toISOString().slice(0, 7),
+        mode: draft.mode,
+        kind: draft.kind,
+      });
+      notify(t(`Espacio “${draft.name.trim() || t("Nuevo espacio", "New space")}” creado.`, `Space “${draft.name.trim() || t("New space", "New space")}” created.`), "success");
+      setShowCreate(false);
+      setDraft((current) => ({ ...current, name: "" }));
+      onSwitchSpace(id as string);
+    } catch (error) {
+      notify(error instanceof Error ? cleanConvexErrorMessage(error.message) : t("No se pudo crear el espacio.", "Couldn't create the space."), "error");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDelete(space: CloudHouseholdSummary) {
+    if (typeof window !== "undefined" && !window.confirm(t(`¿Borrar el espacio “${space.name}” y TODOS sus datos de forma permanente?`, `Permanently delete the “${space.name}” space and ALL its data?`))) return;
+    try {
+      await deleteSpace({ householdId: space.id as Id<"households">, confirm: "DELETE" });
+      notify(t(`Espacio “${space.name}” borrado.`, `Space “${space.name}” deleted.`), "success");
+    } catch (error) {
+      notify(error instanceof Error ? cleanConvexErrorMessage(error.message) : t("No se pudo borrar el espacio.", "Couldn't delete the space."), "error");
+    }
+  }
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="serif text-xl font-bold">{t("Tus espacios", "Your spaces")}</h3>
+        <button
+          className="rounded-full bg-[var(--lime)] px-5 py-2.5 text-sm font-bold text-black"
+          onClick={() => setShowCreate((open) => !open)}
+          type="button"
+        >
+          {showCreate ? t("Cancelar", "Cancel") : t("+ Crear espacio", "+ Create space")}
+        </button>
+      </div>
+      <p className="mt-1 text-sm text-[var(--text-muted)]">
+        {t(`Tienes ${ownedCount} ${ownedCount === 1 ? "espacio propio" : "espacios propios"}. Cambiar de espacio cambia todo: cuentas, plan y movimientos.`, `You own ${ownedCount} ${ownedCount === 1 ? "space" : "spaces"}. Switching spaces switches everything: accounts, plan, and transactions.`)}
+      </p>
+
+      {showCreate && (
+        <form className="mt-4 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] p-4" onSubmit={handleCreate}>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Input label={t("Nombre", "Name")} value={draft.name} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} placeholder={t("Negocio, Ahorros, Viaje…", "Business, Savings, Trip…")} />
+            <Select label={t("Tipo", "Type")} value={draft.kind} options={["personal", "family", "business", "test"]} render={spaceKindLabel} onChange={(value) => setDraft((current) => ({ ...current, kind: value as typeof draft.kind }))} />
+            <Select label={t("Modo de presupuesto", "Budget mode")} value={draft.mode} options={["tracker", "monthly-plan", "zero"]} render={(value) => modeLabel(value as Mode, t)} onChange={(value) => setDraft((current) => ({ ...current, mode: value as Mode }))} />
+            <Select label={t("Moneda", "Currency")} value={draft.currency} options={supportedCurrencies} render={currencyLabel} onChange={(value) => setDraft((current) => ({ ...current, currency: value as CurrencyCode }))} />
+          </div>
+          <button className="mt-4 w-full rounded-2xl bg-[var(--lime)] px-6 py-3.5 text-sm font-bold text-black disabled:opacity-60 md:w-auto md:px-8" disabled={creating} type="submit">
+            {creating ? t("Creando…", "Creating…") : t("Crear y abrir", "Create and open")}
+          </button>
+        </form>
+      )}
+
+      <div className="mt-4 grid gap-2.5">
+        {households === null && <p className="text-sm text-[var(--text-muted)]">{t("Cargando tus espacios…", "Loading your spaces…")}</p>}
+        {households !== null && list.length === 0 && (
+          <p className="text-sm text-[var(--text-muted)]">{t("Aún no tienes espacios en la nube. Crea el primero arriba.", "You don't have any cloud spaces yet. Create your first one above.")}</p>
+        )}
+        {list.map((space) => {
+          const isActive = space.id === activeHouseholdId;
+          const membersLabel = `${space.memberCount} ${space.memberCount === 1 ? t("miembro", "member") : t("miembros", "members")}`;
+          return (
+            <div className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 ${isActive ? "border-[var(--primary)] bg-[rgba(204,255,0,0.10)]" : "border-[var(--line)] bg-white/60"}`} key={space.id}>
+              <div className="min-w-0">
+                <p className="font-bold">{space.name}</p>
+                <p className="mt-0.5 text-xs uppercase tracking-wide text-[var(--text-muted)]">
+                  {roleLabel(space.role)} · {modeLabel(space.mode as Mode, t)} · {space.currency} · {membersLabel}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                {isActive ? (
+                  <span className="text-sm font-bold text-[var(--primary)]">{t("Activo", "Active")}</span>
+                ) : (
+                  <>
+                    <button className="rounded-full border border-[var(--line-strong)] bg-white px-4 py-1.5 text-sm font-bold" onClick={() => onSwitchSpace(space.id)} type="button">
+                      {t("Abrir", "Open")}
+                    </button>
+                    {space.role === "owner" && (
+                      <button className="text-xs font-bold text-[var(--danger)]" onClick={() => void handleDelete(space)} type="button">
+                        {t("Borrar", "Delete")}
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+// Convex antepone "[CONVEX M(...)] ... Uncaught Error:" a los errores de mutación;
+// extrae el texto humano escrito en el backend.
+function cleanConvexErrorMessage(raw: string): string {
+  const marker = "Uncaught Error:";
+  const index = raw.indexOf(marker);
+  const cut = index >= 0 ? raw.slice(index + marker.length) : raw;
+  return cut.split("\n")[0].trim() || raw;
 }
 
 function PlanView({
@@ -6970,7 +7145,7 @@ function ExportView({ state }: { state: AppState }) {
 
 // Cloud identity: the real Convex Auth session + members + danger zone. Rendered only when
 // Convex is configured (so the auth/mutation hooks always run under the provider).
-function CloudAccountSection() {
+function CloudAccountSection({ householdId, myRole }: { householdId: string | null; myRole: "owner" | "editor" | "viewer" | null }) {
   const { t } = useT();
   const { notify } = useToast();
   const { signOut } = useAuthActions();
@@ -7005,7 +7180,7 @@ function CloudAccountSection() {
   return (
     <div className="mb-5 grid gap-5">
       <AuthPanel />
-      <MembersPanel notify={notify} />
+      <MembersPanel householdId={householdId} myRole={myRole} notify={notify} />
       <Card>
         <h3 className="serif text-2xl font-bold text-[var(--danger)]">{t("Zona de peligro", "Danger zone")}</h3>
         <p className="mt-2 text-sm text-[var(--text-muted)]">{t("Borra tu cuenta y todos tus datos (cuentas, movimientos, deudas, metas) de la nube de forma permanente. Tendrás que registrarte de nuevo para volver a usar la app.", "Permanently delete your account and all your data (accounts, transactions, debts, goals) from the cloud. You'll need to sign up again to use the app.")}</p>
@@ -7023,7 +7198,19 @@ function CloudAccountSection() {
   );
 }
 
-function AccountView({ state, setState, authed = false }: { state: AppState; setState: Dispatch<SetStateAction<AppState>>; authed?: boolean }) {
+function AccountView({
+  state,
+  setState,
+  authed = false,
+  cloudRole = null,
+  householdId = null,
+}: {
+  state: AppState;
+  setState: Dispatch<SetStateAction<AppState>>;
+  authed?: boolean;
+  cloudRole?: "owner" | "editor" | "viewer" | null;
+  householdId?: string | null;
+}) {
   const { t } = useT();
   const member = currentWorkspaceMember(state);
   const [draft, setDraft] = useState({
@@ -7105,7 +7292,7 @@ function AccountView({ state, setState, authed = false }: { state: AppState; set
   return (
     <ViewShell title={t("Cuenta y acceso", "Account & access")} eyebrow={authed ? t("Sesión verificada", "Verified session") : sessionActive ? t("Sesión local activa", "Local session active") : t("Sin sesión", "Not signed in")} description={t("Tu hogar se sincroniza con tu cuenta entre el celular y la computadora.", "Your household syncs to your account across your phone and computer.")}>
       {convexConfigured ? (
-        <CloudAccountSection />
+        <CloudAccountSection householdId={householdId} myRole={cloudRole} />
       ) : (
         <Card className="mb-5">
           <h3 className="serif text-xl font-bold">{t("Crear o iniciar sesión", "Create account or sign in")}</h3>
@@ -7136,7 +7323,9 @@ function AccountView({ state, setState, authed = false }: { state: AppState; set
         <h3 className="serif text-xl font-bold">{t("Permisos activos", "Active permissions")}</h3>
         <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Metric label={t("Estado", "Status")} value={sessionActive ? t("Activa", "Active") : t("Anónima", "Anonymous")} tone={sessionActive ? "good" : "bad"} />
-          <Metric label={t("Rol actual", "Current role")} value={roleLabel(authed ? "owner" : member?.role ?? "viewer")} />
+          {/* El rol real viene de la membresía en la nube (owner/editor/viewer); antes se
+              mostraba "Propietario" a cualquier sesión, incluso a un invitado de solo lectura. */}
+          <Metric label={t("Rol actual", "Current role")} value={roleLabel(authed ? (cloudRole ?? "owner") : member?.role ?? "viewer")} />
         </div>
         {!convexConfigured && (
           <div className="mt-6">

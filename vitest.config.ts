@@ -16,5 +16,8 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
     globals: true,
+    // Repone window.localStorage cuando el Node del sistema (>=22) lo deja
+    // undefined bajo jsdom (ver vitest.setup.ts).
+    setupFiles: ["./vitest.setup.ts"],
   },
 });

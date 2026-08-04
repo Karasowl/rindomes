@@ -1,7 +1,7 @@
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { assertCanAccess } from "./finance";
+import { assertCanAccess, assertCanWrite } from "./finance";
 
 // ============================================================================
 // Real file storage for receipts/invoices. These functions own the
@@ -21,7 +21,7 @@ export const generateReceiptUploadUrl = mutation({
   args: { householdId: v.id("households") },
   handler: async (ctx, { householdId }): Promise<string> => {
     const userId = await getAuthUserId(ctx);
-    await assertCanAccess(ctx, householdId, userId);
+    await assertCanWrite(ctx, householdId, userId);
     return await ctx.storage.generateUploadUrl();
   },
 });
@@ -46,7 +46,7 @@ export const registerReceipt = mutation({
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
-    await assertCanAccess(ctx, args.householdId, userId);
+    await assertCanWrite(ctx, args.householdId, userId);
     return await ctx.db.insert("attachments", {
       householdId: args.householdId,
       storageId: args.storageId,
@@ -89,7 +89,7 @@ export const linkReceiptToTransaction = mutation({
     const userId = await getAuthUserId(ctx);
     const attachment = await ctx.db.get(attachmentId);
     if (!attachment) throw new Error("El recibo ya no existe.");
-    await assertCanAccess(ctx, attachment.householdId, userId);
+    await assertCanWrite(ctx, attachment.householdId, userId);
 
     // Validate the transaction belongs to the same household before linking.
     const transaction = await ctx.db.get(transactionId);
@@ -116,7 +116,7 @@ export const deleteAttachment = mutation({
     const userId = await getAuthUserId(ctx);
     const attachment = await ctx.db.get(attachmentId);
     if (!attachment) return { ok: true };
-    await assertCanAccess(ctx, attachment.householdId, userId);
+    await assertCanWrite(ctx, attachment.householdId, userId);
 
     if (attachment.storageId) {
       // Free the blob before deleting the row. If the blob is already gone we
